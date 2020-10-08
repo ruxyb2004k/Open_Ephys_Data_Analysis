@@ -1,1 +1,1 @@
-# Open-Ephys-Data-Analysis
+# Open_Ephys_Data_Analysis
