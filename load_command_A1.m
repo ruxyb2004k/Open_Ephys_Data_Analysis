@@ -317,8 +317,13 @@ linkdata(fig, 'on');
 range1 = [];
 range2 = [];
 
-subTrialsForAnalysis = 1:numel(recStartDataPoint)-1; % keep all trials
-% subTrialsForAnalysis = [1:12, 17:40]; % select trials
+% no need to comment out anything here from now on. Just fill 'exclude', or
+% leave it empty
+subTrialsForAnalysis = 1:numel(recStartDataPoint)-1;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+exclude = [4,1,80,23,23,11]; %state here what trials you want to exclude
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+subTrialsForAnalysis = countformepls(subTrialsForAnalysis,totalConds,exclude);
 
 range2(1,1) = recStartDataPoint(subTrialsForAnalysis(1));
 
