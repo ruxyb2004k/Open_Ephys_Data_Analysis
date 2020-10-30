@@ -70,7 +70,7 @@ muaCodes = spikeClusterData.muaCodes;
 noiseCodes = spikeClusterData.noiseCodes;
 
 if sum(spikeClusterData.uniqueCodes(:,2)) == 0
-    goodCodes = spikeClusterData.uniqueCodes(:,1);
+%     goodCodes = spikeClusterData.uniqueCodes(:,1);
     warning('Channel numbers not updated')
     saveFigs = false;
 end    
@@ -111,18 +111,20 @@ for cond = (1:totalConds)
 end
 %% plot NEW figures - good codes
 
-% saveFigs = 1;
+%%%%%%%%% change parameters here %%%%%%%%%
+selectedCodesInd = (1:numel(goodCodes));% selected codes indices
+selectedCodesIndSpont  =[1,0,0,0,0,0,0]; %array of same size. 1 = effect on spontaneous activity; 0 = everything else
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-C = repmat(['r', 'g', 'b', 'y', 'm', 'k'], [1,2]);
+% saveFigs = 1;
+% C = repmat(['r', 'g', 'b', 'y', 'm', 'k'], [1,2]);
+C = repmat([1,0.7,0.7; 1,0,0; 0.7,1,0.7; 0,1,0; 0.5,0.5,1; 0,0,1; 1,1,0.5; 1,1,0; 1,0.5,1; 1,0,1; 0.5,0.5,0.5; 0,0,0],[2,1]);
 trace=zeros(totalConds, numel(goodCodes), (plotEnd-plotBeg)/bin);
 edges = [];
 meanTrace = zeros(totalConds, (plotEnd-plotBeg)/bin);
-%%%%%%%%% change parameters here %%%%%%%%%
-selectedCodesInd = [1,2];%(1:numel(goodCodes));% selected codes indices
-selectedCodesIndSpont  =[]; %array of same size. 1 = effect on spontaneous activity; 0 = everything else
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 selectedCodes = goodCodes(selectedCodesInd); % selected codes 
-selectedCodesDepth = spikeClusterData.uniqueCodesRealDepth(selectedCodesInd);
+selectedCodesDepth = spikeClusterData.uniqueCodesRealDepth(ismember(spikeClusterData.uniqueCodes(:,1), selectedCodes));
 for cond = (1:totalConds) % for all conds
     for code = (1:numel(goodCodes)) % for all good codes      
         [trace(cond, code,:), edges(cond, code,:)] = histcounts(spikeInTrials{cond,code},(plotBeg:bin:plotEnd)); % calculate the histocount
@@ -131,38 +133,47 @@ for cond = (1:totalConds) % for all conds
 end
 
 close all
+x = [sessionInfo.visStim; sessionInfo.visStim + 0.2]';
 for code = selectedCodesInd%(1:numel(goodCodes))%(20:22) % plot figures for good or selected codes
     figure
-    for cond = (1:totalConds)
+    for cond = (1:totalConds)          
         if cond == 2
             title(goodCodes(code))
-        end
+        end     
         currentConName = conditionFieldnames{cond};
         subplot(totalConds+4,1,cond, 'align');
         plotSpikeRaster(spikeScatter.(currentConName)(code,:),'PlotType','scatter','XLimForCell',[plotBeg plotEnd]);
-        set(gca,'XLim',[plotBeg plotEnd+bin]);
+        set(gca,'XLim',[plotBeg plotEnd]);
         set(gca,'XTick',[]); %floor(-preTrialTime):5:floor(plotEnd)]);
 %         set(gca,'FontSize',24);
         set(gca, 'XColor', 'w');
-        ylabel(currentConName, 'FontSize',8);
+        ylabel(currentConName, 'FontSize',8, 'Color', C(cond,:));
+        if ~contains(conditionFieldnames{cond}, 'c0')
+            yl = ylim;
+            for i = 1:size(x,1)
+                rectangle('Position', [x(i,1) yl(1) 0.2 yl(2)-yl(1)], 'FaceColor',[0.85 0.85 0.85], 'EdgeColor', 'none');
+            end
+        end   
         if mod(cond,2)==0
             h1 = line([optStimInterval(1) optStimInterval(1)],[0 totalTrials + 1]); %max(h.Values)
             h2 = line([optStimInterval(2) optStimInterval(2)],[0 totalTrials + 1]);
             set([h1 h2],'Color','c','LineWidth',1)% Set properties of lines
             patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1)],[0 0 totalTrials + 1 totalTrials + 1],'c', 'EdgeColor', 'none');% Add a patch
-            set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
         end
+        set(gca,'children',flipud(get(gca,'children')))%
+         
     end
     
     subplot(totalConds+4,1,[totalConds+1 totalConds+2], 'align');
     for cond = (1:totalConds)
-          ls = '-';
+        ls = '-';
 %         C1 = 'k';
 %         if mod(cond,2) == 0
-%             ls = '--';
+%             ls = ':';
 %             C1 = 'b';
 %         end
-        plot((plotBeg+bin:bin:plotEnd), squeeze(trace(cond, code,:)), 'Color', C(fix((cond+1)/2)), 'LineWidth', mod(cond,2)+2, 'LineStyle', ls); hold on
+%         plot((plotBeg+bin:bin:plotEnd), squeeze(trace(cond, code,:)), 'Color', C(fix((cond+1)/2),:), 'LineWidth', mod(cond,2)+2, 'LineStyle', ls); hold on
+        plot((plotBeg+bin:bin:plotEnd), squeeze(trace(cond, code,:)), 'Color', C(cond,:),'LineWidth', 3); hold on
         %plot((-preTrialTime:bin:trialDuration+afterTrialTime-bin), squeeze(trace(cond, code,:)), 'Color', C1, 'LineWidth', mod(cond,2)+2, 'LineStyle', ls); hold on
 
     end
@@ -170,15 +181,20 @@ for code = selectedCodesInd%(1:numel(goodCodes))%(20:22) % plot figures for good
     box off
     ylabel('Count');
     ax = gca;
-    set(ax,'XLim',[plotBeg+bin plotEnd+bin],'FontSize',24);
+    set(ax,'XLim',[plotBeg plotEnd],'FontSize',24);
     set(gca,'XTick',[]);
     set(gca, 'XColor', 'w');
     h1 = line([optStimInterval(1) optStimInterval(1)],[0 max(max(trace(:, code,:)))]); %max(h.Values)
     h2 = line([optStimInterval(2) optStimInterval(2)],[0 max(max(trace(:, code,:)))]);
     set([h1 h2],'Color','c','LineWidth',1)% Set properties of lines
-    patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1) ],[0 0 max(max(trace(:, code,:))) max(max(trace(:, code,:)))],'c', 'EdgeColor', 'none'); % Add a patch
-    set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
-
+%     patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1) ],[0 0 max(max(trace(:, code,:))) max(max(trace(:, code,:)))],'c', 'EdgeColor', 'none'); % Add a patch
+%     set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
+    yl = ylim;
+    for i = 1:size(x,1)
+        h3 = line('XData',x(i,:),'YData', [yl(2) yl(2)]); %line([-2.4 -2.2],[fact*max_hist2 fact*max_hist2]);
+        set(h3,'Color',[0.75 0.75 0.75] ,'LineWidth',4);% Set properties of lines
+    end   
+   
     
     subplot(totalConds+4,1,[totalConds+3 totalConds+4], 'align');
     plot((plotBeg+bin:bin:plotEnd),squeeze(sum(trace(1:2:end,code,:),1)),'Color', 'k','LineWidth',2);
@@ -192,7 +208,7 @@ for code = selectedCodesInd%(1:numel(goodCodes))%(20:22) % plot figures for good
 
 %     set('facecolor',[1 0 1]);
     ax = gca;
-    set(ax,'XLim',[plotBeg+bin plotEnd+bin],'FontSize',24);
+    set(ax,'XLim',[plotBeg plotEnd],'FontSize',24);
     set(ax, 'TickDir', 'out');
     set(ax,'xtick',[floor(plotBeg):1:floor(plotEnd)]); % set major ticks
 %     set(ax,'YLim',[0 max(h.Values)],'FontSize',24);
@@ -202,8 +218,8 @@ for code = selectedCodesInd%(1:numel(goodCodes))%(20:22) % plot figures for good
     h1 = line([optStimInterval(1) optStimInterval(1)],[0 y1(2)]); %max(h.Values)
     h2 = line([optStimInterval(2) optStimInterval(2)],[0 y1(2)]);
     set([h1 h2],'Color','c','LineWidth',1)% Set properties of lines
-    patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1) ],[0 0 y1(2) y1(2)],'c', 'EdgeColor', 'none'); % Add a patch
-    set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
+%     patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1) ],[0 0 y1(2) y1(2)],'c', 'EdgeColor', 'none'); % Add a patch
+%     set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
     if saveFigs == true
         savefig(strcat(savePathGood,  filesep, 'AllCondRasterAndTrace_',num2str(goodCodes(code)),'.fig'));
     end
@@ -241,6 +257,7 @@ for code = (1:numel(goodCodes))
                 maxTraceByTrial(cond, code, :, stim) = squeeze(mean(traceByTrial(cond, code,:,stimTime(stim):stimTime(stim)+round(0.4/bin)),4));
             end
             % just needed for orientation experiments
+            
             amplByTrial(cond, code, :, stim) = squeeze(sum(traceByTrial(cond, code, :, stimTime(stim):stimTime(stim)+0.8/bin),4));
         end
         
@@ -257,93 +274,26 @@ end
 statsCodesInd = 1:numel(goodCodes);%selectedCodesInd;%
 statsSuaF
 
-%%
-
-clusterTimeSeries.spikeInTrials = spikeInTrials;
-clusterTimeSeries.spikeByTrial = spikeByTrial;
-clusterTimeSeries.bin = bin;
-
-clusterTimeSeries.amplByTrial = amplByTrial;
-clusterTimeSeries.traceByTrial = traceByTrial;
-clusterTimeSeries.maxTraceByTrial = maxTraceByTrial;
-clusterTimeSeries.baselineByTrial = baselineByTrial;
-clusterTimeSeries.traceFreqGood = traceFreqGood;
-clusterTimeSeries.traceFreqGoodSel = traceFreqGoodSel;
-
-clusterTimeSeries.statsSua.keepTrials = keepTrials;
-clusterTimeSeries.statsSua.keepTrialsBase = keepTrialsBase;
-
-clusterTimeSeries.statsSua.statsCodesInd = statsCodesInd;
-clusterTimeSeries.statsSua.hSua = hSua;
-clusterTimeSeries.statsSua.pSua = pSua;
-clusterTimeSeries.statsSua.hSuaW = hSuaW;
-clusterTimeSeries.statsSua.pSuaW = pSuaW;
-
-clusterTimeSeries.statsSua.hSuaBase = hSuaBase;
-clusterTimeSeries.statsSua.pSuaBase = pSuaBase;
-clusterTimeSeries.statsSua.hSuaBaseW = hSuaBaseW;
-clusterTimeSeries.statsSua.pSuaBaseW = pSuaBaseW;
-
-clusterTimeSeries.statsSua.hSuaBaseSameCond = hSuaBaseSameCond;
-clusterTimeSeries.statsSua.pSuaBaseSameCond = pSuaBaseSameCond;
-clusterTimeSeries.statsSua.hSuaBaseSameCondW = hSuaBaseSameCondW;
-clusterTimeSeries.statsSua.pSuaBaseSameCondW = pSuaBaseSameCondW;
-
-clusterTimeSeries.statsSua.hSuaBaseComb = hSuaBaseComb;
-clusterTimeSeries.statsSua.pSuaBaseComb = pSuaBaseComb;
-clusterTimeSeries.statsSua.hSuaBaseCombW = hSuaBaseCombW;
-clusterTimeSeries.statsSua.pSuaBaseCombW = pSuaBaseCombW;
-
-
-%% Stats 2
-
-statsCodesInd = selectedCodesInd;%
-statsSuaF
-
-clusterTimeSeries.selectedCodes = selectedCodes;
-clusterTimeSeries.selectedCodesDepth = selectedCodesDepth;
-clusterTimeSeries.selectedCodesInd = selectedCodesInd;
-clusterTimeSeries.selectedCodesIndSpont = selectedCodesIndSpont;
-
-
-clusterTimeSeries.statsSuaSel.keepTrials = keepTrials;
-clusterTimeSeries.statsSuaSel.keepTrialsBase = keepTrialsBase;
-
-clusterTimeSeries.statsSuaSel.statsCodesInd = statsCodesInd;
-clusterTimeSeries.statsSuaSel.hSua = hSua;
-clusterTimeSeries.statsSuaSel.pSua = pSua;
-clusterTimeSeries.statsSuaSel.hSuaW = hSuaW;
-clusterTimeSeries.statsSuaSel.pSuaW = pSuaW;
-
-clusterTimeSeries.statsSuaSel.hSuaBase = hSuaBase;
-clusterTimeSeries.statsSuaSel.pSuaBase = pSuaBase;
-clusterTimeSeries.statsSuaSel.hSuaBaseW = hSuaBaseW;
-clusterTimeSeries.statsSuaSel.pSuaBaseW = pSuaBaseW;
-
-clusterTimeSeries.statsSuaSel.hSuaBaseSameCond = hSuaBaseSameCond;
-clusterTimeSeries.statsSuaSel.pSuaBaseSameCond = pSuaBaseSameCond;
-clusterTimeSeries.statsSuaSel.hSuaBaseSameCondW = hSuaBaseSameCondW;
-clusterTimeSeries.statsSuaSel.pSuaBaseSameCondW = pSuaBaseSameCondW;
-
-clusterTimeSeries.statsSuaSel.hSuaBaseComb = hSuaBaseComb;
-clusterTimeSeries.statsSuaSel.pSuaBaseComb = pSuaBaseComb;
-clusterTimeSeries.statsSuaSel.hSuaBaseCombW = hSuaBaseCombW;
-clusterTimeSeries.statsSuaSel.pSuaBaseCombW = pSuaBaseCombW;
-
 %% partial save 
+
+writeClusterTimeSeriesSua
 save(filenameClusterTimeSeries, 'clusterTimeSeries')
 
 %% plot NEW figures - mua codes
 
-C = repmat(['r', 'g', 'b', 'y', 'm', 'k'], [1,2]);
-traceMua=zeros(totalConds, numel(muaCodes), (plotEnd - plotBeg)/bin);
-edges =[];
-meanTraceMua = zeros(totalConds, (plotEnd - plotBeg)/bin);
 %%%%%%%% change parameters here %%%%%%%%%
 selectedCodesIndMua = (1:numel(muaCodes)); % selected codes indices
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% C = repmat(['r', 'g', 'b', 'y', 'm', 'k'], [1,2]);
+C = repmat([1,0.7,0.7; 1,0,0; 0.7,1,0.7; 0,1,0; 0.5,0.5,1; 0,0,1; 1,1,0.5; 1,1,0; 1,0.5,1; 1,0,1; 0.5,0.5,0.5; 0,0,0],[2,1]);
+traceMua=zeros(totalConds, numel(muaCodes), (plotEnd - plotBeg)/bin);
+edges =[];
+meanTraceMua = zeros(totalConds, (plotEnd - plotBeg)/bin);
+
 selectedCodesMua = muaCodes(selectedCodesIndMua); % selected codes 
-selectedCodesDepthMua = spikeClusterData.uniqueCodesRealDepth(selectedCodesIndMua);
+selectedCodesDepthMua = spikeClusterData.uniqueCodesRealDepth(ismember(spikeClusterData.uniqueCodes(:,1), selectedCodesMua));
+
 for cond = (1:totalConds)
     for code = (1:numel(muaCodes))    
         [traceMua(cond, code,:), edges(cond, code,:)] = histcounts(spikeInTrialsMua{cond,code},(plotBeg:bin:plotEnd));
@@ -353,6 +303,7 @@ end
 
 clear normtraceMua traceByTrialMua edgesByTrialMua maxTraceByTrial baselineByTrial
 close all
+x = [sessionInfo.visStim; sessionInfo.visStim + 0.2]';
 for code = selectedCodesIndMua%(1:numel(muaCodes))%(20:22)%
     figure
     for cond = (1:totalConds)
@@ -363,18 +314,25 @@ for code = selectedCodesIndMua%(1:numel(muaCodes))%(20:22)%
         subplot(totalConds+4,1,cond, 'align');
 %         title('100 % visual Stimulus');
         plotSpikeRaster(spikeScatterMua.(currentConName)(code,:),'PlotType','scatter','XLimForCell',[plotBeg plotEnd]);
-        set(gca,'XLim',[plotBeg+bin plotEnd+bin]);
+        set(gca,'XLim',[plotBeg plotEnd]);
         set(gca,'XTick',[]); 
 %         set(gca,'FontSize',24);
         set(gca, 'XColor', 'w');
-        ylabel(currentConName, 'FontSize',8);
+        ylabel(currentConName, 'FontSize',8, 'Color', C(cond,:));
+        if ~contains(conditionFieldnames{cond}, 'c0')
+            yl = ylim;
+            for i = 1:size(x,1)
+                rectangle('Position', [x(i,1) yl(1) 0.2 yl(2)-yl(1)], 'FaceColor',[0.85 0.85 0.85], 'EdgeColor', 'none');
+            end
+        end   
         if mod(cond,2)==0
             h1 = line([optStimInterval(1) optStimInterval(1)],[0 totalTrials + 1]); %max(h.Values)
             h2 = line([optStimInterval(2) optStimInterval(2)],[0 totalTrials + 1]);
             set([h1 h2],'Color','c','LineWidth',1)% Set properties of lines
             patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1)],[0 0 totalTrials + 1 totalTrials + 1],'c', 'EdgeColor', 'none');% Add a patch
-            set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
         end
+        set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
+
     end
     
     subplot(totalConds+4,1,[totalConds+1 totalConds+2], 'align');  
@@ -385,7 +343,8 @@ for code = selectedCodesIndMua%(1:numel(muaCodes))%(20:22)%
 %             ls = '--';
 %             C1 = 'b';
 %         end
-        plot((plotBeg+bin:bin:plotEnd), squeeze(traceMua(cond, code,:)), 'Color', C(fix((cond+1)/2)), 'LineWidth', mod(cond,2)+2, 'LineStyle', ls); hold on
+%         plot((plotBeg+bin:bin:plotEnd), squeeze(traceMua(cond, code,:)), 'Color', C(fix((cond+1)/2)), 'LineWidth', mod(cond,2)+2, 'LineStyle', ls); hold on
+        plot((plotBeg+bin:bin:plotEnd), squeeze(traceMua(cond, code,:)), 'Color', C(cond,:),'LineWidth', 3); hold on
         %plot((-preTrialTime:bin:trialDuration+afterTrialTime-bin), squeeze(trace(cond, code,:)), 'Color', C1, 'LineWidth', mod(cond,2)+2, 'LineStyle', ls); hold on
 
     end
@@ -393,15 +352,19 @@ for code = selectedCodesIndMua%(1:numel(muaCodes))%(20:22)%
     box off
     ylabel('Count');
     ax = gca;
-    set(ax,'XLim',[plotBeg+bin plotEnd+bin],'FontSize',24);
+    set(ax,'XLim',[plotBeg plotEnd],'FontSize',24);
     set(gca,'XTick',[]);
     set(gca, 'XColor', 'w');
     h1 = line([optStimInterval(1) optStimInterval(1)],[0 max(max(traceMua(:, code,:)))]); %max(h.Values)
     h2 = line([optStimInterval(2) optStimInterval(2)],[0 max(max(traceMua(:, code,:)))]);
     set([h1 h2],'Color','c','LineWidth',1)% Set properties of lines
-    patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1) ],[0 0 max(max(traceMua(:, code,:))) max(max(traceMua(:, code,:)))],'c', 'EdgeColor', 'none'); % Add a patch
-    set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
-
+%     patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1) ],[0 0 max(max(traceMua(:, code,:))) max(max(traceMua(:, code,:)))],'c', 'EdgeColor', 'none'); % Add a patch
+%     set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
+    yl = ylim;
+    for i = 1:size(x,1)
+        h3 = line('XData',x(i,:),'YData', [yl(2) yl(2)]); %line([-2.4 -2.2],[fact*max_hist2 fact*max_hist2]);
+        set(h3,'Color',[0.85 0.85 0.85] ,'LineWidth',4);% Set properties of lines
+    end   
     
     
     subplot(totalConds+4,1,[totalConds+3 totalConds+4], 'align');
@@ -415,7 +378,7 @@ for code = selectedCodesIndMua%(1:numel(muaCodes))%(20:22)%
     ylabel('Count');
 %     set('facecolor',[1 0 1]);
     ax = gca;
-    set(ax,'XLim',[plotBeg+bin plotEnd+bin],'FontSize',24);
+    set(ax,'XLim',[plotBeg plotEnd],'FontSize',24);
     set(ax, 'TickDir', 'out');
     set(ax,'xtick',[floor(plotBeg):1:floor(plotEnd)]); % set major ticks
 %     set(ax,'YLim',[0 max(h.Values)],'FontSize',24);
@@ -425,8 +388,8 @@ for code = selectedCodesIndMua%(1:numel(muaCodes))%(20:22)%
     h1 = line([optStimInterval(1) optStimInterval(1)],[0 y1(2)]); %max(h.Values)
     h2 = line([optStimInterval(2) optStimInterval(2)],[0 y1(2)]);
     set([h1 h2],'Color','c','LineWidth',1)% Set properties of lines
-    patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1) ],[0 0 y1(2) y1(2)],'c', 'EdgeColor', 'none'); % Add a patch
-    set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
+%     patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1) ],[0 0 y1(2) y1(2)],'c', 'EdgeColor', 'none'); % Add a patch
+%     set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
     if saveFigs == true
 
 %         mkdir(savePathMua);
@@ -477,77 +440,10 @@ traceFreqMua = traceMua(:, 1:numel(muaCodes), :)/bin/totalTrials;
 % Stats 1
 statsCodesIndMua = (1:numel(muaCodes));%selectedCodesIndMua;%
 statsMuaF
-%%
-
-clusterTimeSeries.spikeInTrialsMua = spikeInTrialsMua;
-clusterTimeSeries.spikeByTrialMua = spikeByTrialMua;
-
-
-clusterTimeSeries.traceByTrialMua = traceByTrialMua;
-clusterTimeSeries.maxTraceByTrialMua = maxTraceByTrialMua;
-clusterTimeSeries.baselineByTrialMua = baselineByTrialMua;
-clusterTimeSeries.traceFreqMua = traceFreqMua;
-clusterTimeSeries.traceFreqMuaSel = traceFreqMuaSel;
-
-clusterTimeSeries.statsMua.keepTrialsMua = keepTrialsMua;
-clusterTimeSeries.statsMua.keepTrialsBaseMua = keepTrialsBaseMua;
-
-clusterTimeSeries.statsMua.statsCodesIndMua = statsCodesIndMua;
-clusterTimeSeries.statsMua.hMua = hMua;
-clusterTimeSeries.statsMua.pMua = pMua;
-clusterTimeSeries.statsMua.hMuaW = hMuaW;
-clusterTimeSeries.statsMua.pMuaW = pMuaW;
-
-clusterTimeSeries.statsMua.hMuaBase = hMuaBase;
-clusterTimeSeries.statsMua.pMuaBase = pMuaBase;
-clusterTimeSeries.statsMua.hMuaBaseW = hMuaBaseW;
-clusterTimeSeries.statsMua.pMuaBaseW = pMuaBaseW;
-
-clusterTimeSeries.statsMua.hMuaBaseSameCond = hMuaBaseSameCond;
-clusterTimeSeries.statsMua.pMuaBaseSameCond = pMuaBaseSameCond;
-clusterTimeSeries.statsMua.hMuaBaseSameCondW = hMuaBaseSameCondW;
-clusterTimeSeries.statsMua.pMuaBaseSameCondW = pMuaBaseSameCondW;
-
-clusterTimeSeries.statsMua.hMuaBaseComb = hMuaBaseComb;
-clusterTimeSeries.statsMua.pMuaBaseComb = pMuaBaseComb;
-clusterTimeSeries.statsMua.hMuaBaseCombW = hMuaBaseCombW;
-clusterTimeSeries.statsMua.pMuaBaseCombW = pMuaBaseCombW;
-
-
-%% stats 2
-statsCodesIndMua = selectedCodesIndMua;%
-statsMuaF
-
-clusterTimeSeries.selectedCodesMua = selectedCodesMua;
-clusterTimeSeries.selectedCodesDepthMua = selectedCodesDepthMua;
-clusterTimeSeries.selectedCodesIndMua = selectedCodesIndMua;
-
-clusterTimeSeries.statsMuaSel.keepTrialsMua = keepTrialsMua;
-clusterTimeSeries.statsMuaSel.keepTrialsBaseMua = keepTrialsBaseMua;
-
-clusterTimeSeries.statsMuaSel.statsCodesIndMua = statsCodesIndMua;
-clusterTimeSeries.statsMuaSel.hMua = hMua;
-clusterTimeSeries.statsMuaSel.pMua = pMua;
-clusterTimeSeries.statsMuaSel.hMuaW = hMuaW;
-clusterTimeSeries.statsMuaSel.pMuaW = pMuaW;
-
-clusterTimeSeries.statsMuaSel.hMuaBase = hMuaBase;
-clusterTimeSeries.statsMuaSel.pMuaBase = pMuaBase;
-clusterTimeSeries.statsMuaSel.hMuaBaseW = hMuaBaseW;
-clusterTimeSeries.statsMuaSel.pMuaBaseW = pMuaBaseW;
-
-clusterTimeSeries.statsMuaSel.hMuaBaseSameCond = hMuaBaseSameCond;
-clusterTimeSeries.statsMuaSel.pMuaBaseSameCond = pMuaBaseSameCond;
-clusterTimeSeries.statsMuaSel.hMuaBaseSameCondW = hMuaBaseSameCondW;
-clusterTimeSeries.statsMuaSel.pMuaBaseSameCondW = pMuaBaseSameCondW;
-
-clusterTimeSeries.statsMuaSel.hMuaBaseComb = hMuaBaseComb;
-clusterTimeSeries.statsMuaSel.pMuaBaseComb = pMuaBaseComb;
-clusterTimeSeries.statsMuaSel.hMuaBaseCombW = hMuaBaseCombW;
-clusterTimeSeries.statsMuaSel.pMuaBaseCombW = pMuaBaseCombW;
-
 
 %% save 
+
+writeClusterTimeSeriesMua
 
 cfCTS = checkFields(clusterTimeSeries);
 if ~cfCTS

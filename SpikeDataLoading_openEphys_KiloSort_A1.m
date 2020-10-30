@@ -1,10 +1,11 @@
 %%% Load matlab data from open ephys kwik files. 
 %%% modified 13.07.2020 by Ruxandra %%%
 
-% experimentName = '2020-09-23_14-18-30'
-% sessionName = 'V1_20200923_1'
+% experimentName = '2020-09-22_12-37-59_trial5'
+% sessionName = 'V1_20200922_1'
 
 clearvars -except experimentName sessionName
+% ks= get(gcf, 'UserData'); ks.ops.fshigh = 300;
 
 path = strsplit(pwd,filesep);
 basePath = strjoin({path{1:end-1}, 'Open Ephys Data', experimentName}, filesep);
@@ -26,26 +27,44 @@ if ~SCDexist
     spikeClusterData.clusterSoftware = 'kilosort';
     spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis;
     
-    filename_kilosort1 = fullfile(basePathKilosort,'rez.mat'); % general info about the session    
-    load(filename_kilosort1);
+    filename_kilosort_rez = fullfile(basePathKilosort,'rez.mat'); % general info about the session    
+    load(filename_kilosort_rez);
 
     spikeClusterData.times = [];
     spikeClusterData.adjGraph = [];
     spikeClusterData.codes = [];
 
     spikeClusterData.times = double(readNPY(fullfile(basePathKilosort,'spike_times.npy')))/sessionInfo.rates.wideband; % all spike times in sec
-%     spikeClusterData.adjGraph = double(h5readatt(filename_kilosort,'/channel_groups/0','adjacency_graph')); still needed? 
     spikeClusterData.codes = double(readNPY(fullfile(basePathKilosort,'spike_clusters.npy'))); % all spike codes
     spikeClusterData.uniqueCodes(:,1) = unique(spikeClusterData.codes); % ordered list of all codes
     
     spikeClusterData.channelPosition = double(readNPY(fullfile(basePathKilosort,'channel_positions.npy'))); % column 2 is the depth, where 0 is the tip of the electrode and all other channels have positive depths
-     
-    [~, cl] = readClusterGroupsCSV(fullfile(basePathKilosort,'cluster_KSLabel.tsv')); % spikeClusterData.uniqueCodesLabel is 0(noise), 1(mua) or 2(good)
+    spikeClusterData.channelShank = rez.ops.kcoords; 
+    
+    cl = []; % cluster labels
+    if exist(fullfile(basePathKilosort,'cluster_group.tsv'), 'file') %
+        [~, cl] = readClusterGroupsCSV(fullfile(basePathKilosort,'cluster_group.tsv')); % spikeClusterData.uniqueCodesLabel is 0(noise), 1(mua) or 2(good)
+    end
+    if isempty(cl) % if cluster_groups.tsv doesn't exist or is empty
+        [~, cl] = readClusterGroupsCSV(fullfile(basePathKilosort,'cluster_KSLabel.tsv')); % spikeClusterData.uniqueCodesLabel is 0(noise), 1(mua) or 2(good)
+        warning('Using automatic good/mua labels');
+    end
     spikeClusterData.uniqueCodesLabel = cl';
-%     spikeClusterData.uniqueCodes(:,2) = 0;
-    spikeClusterData.uniqueCodes(:,2) = rez.iNeighPC(1,:)'-1;
+    
+    spikeClusterData.uniqueCodes(:,2) = 0; % intially, all clusters are considered to be on channel 0
+    if exist(fullfile(basePathKilosort,'cluster_info.tsv'), 'file') % if the clusters were saved after inspecting them with phy this file should exist
+        [~, ch] = readClusterInfoCSV(fullfile(basePathKilosort,'cluster_info.tsv')); % extract the channels for each cluster
+        spikeClusterData.uniqueCodes(:,2) = ch'; 
+        disp('Channels for each cluster imported from cluster_info.tsv');
+    end   
+    if exist(fullfile(basePathKilosort,'cluster_ContamPct.tsv'), 'file') % if the clusters were saved after inspecting them with phy this file should exist
+        [~, cp] = readClusterContamPctCSV(fullfile(basePathKilosort,'cluster_ContamPct.tsv')); % extract the contamination percentage for each cluster
+        spikeClusterData.uniqueCodesContamPct(:,1) = cp'; 
+        disp('Contamination percentage for each cluster imported from cluster_info.tsv');
+    end    
+    warning('Please double-check the channel numbers');
 end
-warning('Please double-check the channel numbers');
+
 %% verify first in kilosort if the channels fit the cluster codes and insert manually the channel number...
 
 if ~SCDexist
@@ -56,8 +75,9 @@ if ~SCDexist
     spikeClusterData.uniqueCodesDepth(:,1) = spikeClusterData.channelPosition(spikeClusterData.uniqueCodesChannel(:,1)+1,2);
 
     % calculate the depth of each channel based on the recording depth
-    spikeClusterData.uniqueCodesRealDepth(:,1) = sessionInfo.recordingDepth + spikeClusterData.uniqueCodesDepth(:,1); 
-    
+    codeShank = spikeClusterData.channelShank(spikeClusterData.uniqueCodesChannel+1);% for multiple shanks
+    spikeClusterData.uniqueCodesRealDepth(:,1) = sessionInfo.recordingDepth(codeShank)' + spikeClusterData.uniqueCodesDepth(:,1); 
+
     unclCodes = []; % unclassified codes
     goodCodes = [];
     muaCodes = [];

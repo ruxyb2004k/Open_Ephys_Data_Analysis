@@ -123,7 +123,7 @@ selectedCodesInd = (1:numel(goodCodes));% selected codes indices
 selectedCodesIndSpont  =[]; %array of same size. 1 = effect on spontaneous activity; 0 = everything else
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 selectedCodes = goodCodes(selectedCodesInd); % selected codes 
-selectedCodesDepth = spikeClusterData.uniqueCodesRealDepth(selectedCodesInd);
+selectedCodesDepth = spikeClusterData.uniqueCodesRealDepth(ismember(spikeClusterData.uniqueCodes(:,1), selectedCodes));
 for cond = (1:totalConds) % for all conds
     for code = (1:numel(goodCodes)) % for all good codes      
         [trace(cond, code,:), edges(cond, code,:)] = histcounts(spikeInTrials{cond,code},(plotBeg:bin:plotEnd)); % calculate the histocount
@@ -344,7 +344,7 @@ meanTraceMua = zeros(totalConds, (plotEnd - plotBeg)/bin);
 selectedCodesIndMua = [1:6]; %(1:numel(muaCodes)); % selected codes indices
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 selectedCodesMua = muaCodes(selectedCodesIndMua); % selected codes 
-selectedCodesDepthMua = spikeClusterData.uniqueCodesRealDepth(selectedCodesIndMua);
+selectedCodesDepthMua = spikeClusterData.uniqueCodesRealDepth(ismember(spikeClusterData.uniqueCodes(:,1), selectedCodesMua));
 for cond = (1:totalConds)
     for code = (1:numel(muaCodes))    
         [traceMua(cond, code,:), edges(cond, code,:)] = histcounts(spikeInTrialsMua{cond,code},(plotBeg:bin:plotEnd));

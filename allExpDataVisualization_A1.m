@@ -14,7 +14,7 @@ filt(2,:) = strcmp({expSet.animalStrain}, 'PvCre');
 % filt(3,:) = strcmp({expSet.experimentName}, '2020-08-11_15-44-59');
 filt(4,:) = ~(contains({expSet.experimentName}, '2019-07-08') | contains({expSet.experimentName}, '2019-10-24'));
 % filt(5,:) = contains({expSet.animalName}, '20200730') | contains({expSet.animalName}, '20200805');
-filt(6,:) = [repelem(1,69),repelem(0,3)];
+filt(6,:) = [repelem(1,69),repelem(0,4)];
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -65,7 +65,7 @@ for i =1:(size(expSetFilt,2))
     expMua = size(clusterTimeSeries.traceFreqMuaSel,2);
     expSetFiltMua(currUnitsMua+1:currUnitsMua+expMua) = expSetFilt(i);
     
-    % expand the meta-data structures with after reading each experiment
+    % expand the meta-data structures after reading each experiment
     if i == 1
         sessionInfoAll = sessionInfo;
         spikeClusterDataAll = spikeClusterData;

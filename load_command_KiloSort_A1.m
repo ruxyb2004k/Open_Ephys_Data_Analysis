@@ -5,8 +5,8 @@
 
 global i x1 y1 y2 y3 recStartDataPoint z z_filt1 z_filt2 samplingRate
 
-experimentName = '2020-08-07_14-27-01_trial2'
-sessionName = 'V1_20200807_2'
+experimentName = '2020-10-28_16-41-30'
+sessionName = 'V1_20201028_2'
 
 
 path = strsplit(pwd,filesep);
@@ -50,26 +50,24 @@ end
 %%
 %%%%%%% insert session-specific paramteres here %%%%%%%%%%
 
-recordingDepth = -420; % !!! Modify for each experiment !!!
-channelNo = 16;
-probe = '1x16_P1';
-animal.name = '20200730_LV1';
-animal.sex = 'm';
+recordingDepth = [-380, -420]; % !!! Modify for each experiment !!!
+channelNo = 32;
+probe = '2x16_E1';
+animal.name = '20201023_RV1';
+animal.sex = 'f';
 animal.strain = 'PvCre';
 animal.virus = 'AAV9-mOp2A';
-recRegion = 'LV1';
+recRegion = 'RV1';
 
 conditionNames= [];
-conditionNames.c100visStim = 2; % 
-conditionNames.c100optStim = 34; % 
+conditionNames.c100visStim = 1; % 
+conditionNames.c100optStim = 33; % 
 % conditionNames.c50visStim = 3;
 % conditionNames.c50optStim = 35;
 % conditionNames.c25visStim = 5; % 
 % conditionNames.c25optStim = 37; % 
 % conditionNames.c12visStim = 7; % 
 % conditionNames.c12optStim = 39; % 
-% conditionNames.c6visStim = 9; % 
-% conditionNames.c6optStim = 41; % 
 conditionNames.c0visStim = 0; 
 conditionNames.c0optStim = 32;
 
@@ -115,7 +113,7 @@ optStimInterval = [2 10];
 % visStim = (4);
 % optStimInterval = [0.2 6];%[2 10];%
 
-ch_offset = 0; % 0 for 16-channel probes; 16 for shank2, 32 for shank 1
+chOffset = 16; % 0 for 16-channel probes; 16 for shank2, 32 for shank 1
 
 %%%%%%%%% experiment-specific parameters end here %%%%%%%%%%
 
@@ -139,16 +137,17 @@ sessionInfo.probe = probe;
 sessionInfo.animal = animal;
 sessionInfo.recRegion = recRegion;
 sessionInfo.nShanks = str2num(sessionInfo.probe(1));
+sessionInfo.chOffset = chOffset;
 
 
 i=1;
-filename = ['100_CH', num2str(i+ch_offset), '.continuous'];
-[data(1,:), timestamps(:,1), info(:,1)] = load_open_ephys_data([basePathData, filesep, filename]);
+filename = ['100_CH', num2str(i+chOffset), '.continuous'];
+[data(1,:), timestamps(:,1), info(:,1)] = load_open_ephys_data_faster([basePathData, filesep, filename]);
 y(1,:) = bandpass(data(1,:),[600 6000], 20000); % bandpass filter 600-6000 Hz at a recording rate of 20 kHz
 
 % find starting point of each trial
 filename_events = ['all_channels', '.events'];
-[dataEv, timestampsEv, infoEv] = load_open_ephys_data([basePathData, filesep, filename_events]);
+[dataEv, timestampsEv, infoEv] = load_open_ephys_data_faster([basePathData, filesep, filename_events]);
 samplingRate = info.header.sampleRate;
 load([basePathData, filesep, 'order_all_cond.mat']) % load the sequence of all conditions
 condData.codes = order_all_cond;
@@ -188,14 +187,16 @@ med = zeros(channelNo,1);
 std_ch = zeros(channelNo,1);
 
 for i=(1:channelNo)
-    filename = ['100_CH', num2str(i+ch_offset), '.continuous'];
-    [data(i,:), timestamps(:,1), info(:,i)] = load_open_ephys_data([basePathData, filesep, filename]);
+    filename = ['100_CH', num2str(i+chOffset), '.continuous'];
+    [data(i,:), timestamps(:,1), info(:,i)] = load_open_ephys_data_faster([basePathData, filesep, filename]);
     % calculate median over each channel and subtract from channel
     med(i) = median(data(i,:));
     std_ch(i) = std(data(i,:));
     data(i,:) = data(i,:) - med(i);
 end
 
+artefactCh = 7;
+deleteArtefact
 
 figure
 plot(timestamps(:,1),y(1,:));
@@ -220,7 +221,7 @@ timeSeries.stdCh = std_ch;
 %% Calculations for fig with epochs + plot figure
 close all
 
-selCh = 4; % selected channel for figure and calculation 
+selCh = 1; % selected channel for figure and calculation 
 totalEpochs = numel(condData.codes);
 
 std_z = zeros(totalEpochs,1);
@@ -324,7 +325,7 @@ range2 = [];
 % leave it empty
 subTrialsForAnalysis = 1:numel(recStartDataPoint)-1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-exclude = [4,1,80,23,23,11]; %state here what trials you want to exclude
+exclude = [16,41,73]; %state here what trials you want to exclude
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subTrialsForAnalysis = countformepls(subTrialsForAnalysis,totalConds,exclude);
 
@@ -362,14 +363,14 @@ end
 
 clearvars data
 
-m = max(max(data_filt));
+m = max(max(max(data_filt)), -min(min(data_filt)));
 disp(['Maximum value: ', num2str(round(m))]);
 gain = suggestGain(m);
 disp(['Suggested gain: ', num2str(gain)]);
 
 
 % flat subset of data 
-% gain = 10;
+%gain = 20
 % datavector = reshape(gain*data_filt, [1, numel(range1)*channelNo]);  % max ist 32000
 datavector = gain * data_filt; % not really vector
 %clearvars -except datavector sessionInfo timeSeries
@@ -380,8 +381,8 @@ disp(['data points below minimum threshold: ',num2str(sum(sum(datavector<-32768)
 
 timeSeries.gain = gain;
 
-%% best way to save the dat file:
-
+%% save the dat file, metadata structures and metadata .mat file
+% save the dat file
 datFilename = [basePathKilosort, filesep, sessionName, '.dat']
 if exist(datFilename,'file')
     warning('.dat file already exists.')
@@ -392,7 +393,7 @@ else
 end    
 
 
-%% Save the meta data
+% Save the metadata structures
 if exist(filenameSessionInfo,'file')
     warning('.sessionInfo.mat file already exists.')
 else
@@ -415,8 +416,8 @@ else
     end    
 end
 
-%%
-% save experiment details:
+
+% save experiment details in a metadata .mat file:
 if exist('allExp.mat','file') %load structure containing all experiments if it already exists
     load('allExp.mat')   
     disp('Loading allExp.mat')
