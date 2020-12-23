@@ -3,13 +3,22 @@
 % Stats 1
 
 clusterTimeSeries.spikeInTrials = spikeInTrials;
-clusterTimeSeries.spikeByTrial = spikeByTrial;
+if numel(goodCodes) %exist('spikeByTrial', 'var')
+    clusterTimeSeries.spikeByTrial = spikeByTrial;
+    clusterTimeSeries.amplByTrial = amplByTrial;
+    clusterTimeSeries.traceByTrial = traceByTrial;
+    clusterTimeSeries.maxTraceByTrial = maxTraceByTrial;
+    clusterTimeSeries.baselineByTrial = baselineByTrial;
+else    
+    clusterTimeSeries.spikeByTrial = [];
+    clusterTimeSeries.amplByTrial = [];
+    clusterTimeSeries.traceByTrial = [];
+    clusterTimeSeries.maxTraceByTrial = [];
+    clusterTimeSeries.baselineByTrial = [];
+end
+
 clusterTimeSeries.bin = bin;
 
-clusterTimeSeries.amplByTrial = amplByTrial;
-clusterTimeSeries.traceByTrial = traceByTrial;
-clusterTimeSeries.maxTraceByTrial = maxTraceByTrial;
-clusterTimeSeries.baselineByTrial = baselineByTrial;
 clusterTimeSeries.traceFreqGood = traceFreqGood;
 clusterTimeSeries.traceFreqGoodSel = traceFreqGoodSel;
 
@@ -37,38 +46,3 @@ clusterTimeSeries.statsSua.pSuaBaseComb = pSuaBaseComb;
 clusterTimeSeries.statsSua.hSuaBaseCombW = hSuaBaseCombW;
 clusterTimeSeries.statsSua.pSuaBaseCombW = pSuaBaseCombW;
 
-
-%% Stats 2
-
-statsCodesInd = selectedCodesInd;%
-statsSuaF
-
-clusterTimeSeries.selectedCodes = selectedCodes;
-clusterTimeSeries.selectedCodesDepth = selectedCodesDepth;
-clusterTimeSeries.selectedCodesInd = selectedCodesInd;
-clusterTimeSeries.selectedCodesIndSpont = selectedCodesIndSpont;
-
-
-clusterTimeSeries.statsSuaSel.keepTrials = keepTrials;
-clusterTimeSeries.statsSuaSel.keepTrialsBase = keepTrialsBase;
-
-clusterTimeSeries.statsSuaSel.statsCodesInd = statsCodesInd;
-clusterTimeSeries.statsSuaSel.hSua = hSua;
-clusterTimeSeries.statsSuaSel.pSua = pSua;
-clusterTimeSeries.statsSuaSel.hSuaW = hSuaW;
-clusterTimeSeries.statsSuaSel.pSuaW = pSuaW;
-
-clusterTimeSeries.statsSuaSel.hSuaBase = hSuaBase;
-clusterTimeSeries.statsSuaSel.pSuaBase = pSuaBase;
-clusterTimeSeries.statsSuaSel.hSuaBaseW = hSuaBaseW;
-clusterTimeSeries.statsSuaSel.pSuaBaseW = pSuaBaseW;
-
-clusterTimeSeries.statsSuaSel.hSuaBaseSameCond = hSuaBaseSameCond;
-clusterTimeSeries.statsSuaSel.pSuaBaseSameCond = pSuaBaseSameCond;
-clusterTimeSeries.statsSuaSel.hSuaBaseSameCondW = hSuaBaseSameCondW;
-clusterTimeSeries.statsSuaSel.pSuaBaseSameCondW = pSuaBaseSameCondW;
-
-clusterTimeSeries.statsSuaSel.hSuaBaseComb = hSuaBaseComb;
-clusterTimeSeries.statsSuaSel.pSuaBaseComb = pSuaBaseComb;
-clusterTimeSeries.statsSuaSel.hSuaBaseCombW = hSuaBaseCombW;
-clusterTimeSeries.statsSuaSel.pSuaBaseCombW = pSuaBaseCombW;

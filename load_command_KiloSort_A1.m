@@ -5,8 +5,8 @@
 
 global i x1 y1 y2 y3 recStartDataPoint z z_filt1 z_filt2 samplingRate
 
-experimentName = '2020-10-28_16-41-30'
-sessionName = 'V1_20201028_2'
+experimentName = '2020-09-30_14-31-53'
+sessionName = 'V1_20200930_3'
 
 
 path = strsplit(pwd,filesep);
@@ -34,30 +34,32 @@ end
 if TSexist
     cfTS = checkFields(timeSeries);
 end
-if SIexist && TSexist
-    answer = questdlg('Load raw data?', 'Menu',...
-        'Yes','No', 'No');
-    % Handle response
-    switch answer
-        case 'Yes'
-            disp([' Loading raw data ...'])
-        case 'No'
-            disp([' Proceed to the next section'])
-            return
-    end
-end
+% if SIexist && TSexist % deactivated for now, as a break between sections
+% has been introduced
+%     answer = questdlg('Load raw data?', 'Menu',...
+%         'Yes','No', 'No');
+%     % Handle response
+%     switch answer
+%         case 'Yes'
+%             disp([' Please run the next section'])
+% %         case 'No'
+% %             disp([' Proceed to the next section'])
+% %             return
+%     end
+% end
 
 %%
 %%%%%%% insert session-specific paramteres here %%%%%%%%%%
 
-recordingDepth = [-380, -420]; % !!! Modify for each experiment !!!
+recordingDepth = [-405 -370]'; % !!! Modify for each experiment !!!
 channelNo = 32;
-probe = '2x16_E1';
-animal.name = '20201023_RV1';
+probe = '2x16_E1';% '1x16_P1' '2x16_E1'
+animal.name = '20201127_LV1';
 animal.sex = 'f';
 animal.strain = 'PvCre';
 animal.virus = 'AAV9-mOp2A';
-recRegion = 'RV1';
+recRegion = 'LV1';
+chOffset = 16; % 0 for 16-channel probes; 16 for 32-channel probe
 
 conditionNames= [];
 conditionNames.c100visStim = 1; % 
@@ -103,6 +105,11 @@ preTrialTime = 3; % time before 0 for display
 visStim = (0.2:3:15.2);
 optStimInterval = [2 10];
 
+% trialDuration = 9;% Contrast protocol (3)
+% preTrialTime = 2; % time before 0 for display
+% visStim = (7);
+% optStimInterval = [0.2 8.2];
+
 % trialDuration = 6;% Contrast protocol (2)
 % preTrialTime = 2; % time before 0 for display
 % visStim = (4);
@@ -113,36 +120,22 @@ optStimInterval = [2 10];
 % visStim = (4);
 % optStimInterval = [0.2 6];%[2 10];%
 
-chOffset = 16; % 0 for 16-channel probes; 16 for shank2, 32 for shank 1
 
 %%%%%%%%% experiment-specific parameters end here %%%%%%%%%%
 
 conditionFieldnames = fieldnames(conditionNames); % extract conditionNames (c0visStim c100visStim etc)
 totalConds = numel(conditionFieldnames);
+condDataIDs = [];
 
-sessionInfo.session.path = basePath;
-sessionInfo.session.name = sessionName;
-sessionInfo.session.experimentName = experimentName;
-sessionInfo.nChannels = channelNo;
-sessionInfo.recordingDepth = recordingDepth;
-sessionInfo.conditionNames = conditionNames;
-sessionInfo.trialDuration = trialDuration;
-sessionInfo.preTrialTime = preTrialTime;
-sessionInfo.afterTrialTime = afterTrialTime; 
-sessionInfo.visStim = visStim;
-% sessionInfo.evokedActInterval = evokedActInterval; 
-% sessionInfo.spontActInterval = spontActInterval;
-sessionInfo.optStimInterval = optStimInterval;
-sessionInfo.probe = probe;
-sessionInfo.animal = animal;
-sessionInfo.recRegion = recRegion;
-sessionInfo.nShanks = str2num(sessionInfo.probe(1));
-sessionInfo.chOffset = chOffset;
-
+for condInt = 1:totalConds % for all conditions
+    currentConName = conditionFieldnames{condInt}; % extract current condition name
+    condDataIDs = [condDataIDs; conditionNames.(currentConName)];
+end
+    
 
 i=1;
 filename = ['100_CH', num2str(i+chOffset), '.continuous'];
-[data(1,:), timestamps(:,1), info(:,1)] = load_open_ephys_data_faster([basePathData, filesep, filename]);
+[data(1,:), timestamps(:,1), info(:,1)] = load_open_ephys_data_faster([basePathData, filesep, filename]);%
 y(1,:) = bandpass(data(1,:),[600 6000], 20000); % bandpass filter 600-6000 Hz at a recording rate of 20 kHz
 
 % find starting point of each trial
@@ -153,7 +146,7 @@ load([basePathData, filesep, 'order_all_cond.mat']) % load the sequence of all c
 condData.codes = order_all_cond;
 doubleTimes = timestampsEv(dataEv==1);% detect the events corresponding to beginning of all conditions
 condData.times = doubleTimes(1:2:end); % remove the event corresponding to switch off of channel 1 in Master 8
-% subtract non-recorded time from total time
+% subtract non-recorded time from to475tal time
 condData.newTimes = zeros(numel(condData.times),1); % new shifted times for condition begin
 timeDiff = zeros(numel(condData.times),1);
 timeDiff(1) =  timestamps(1);
@@ -170,8 +163,28 @@ for timePoint=(1:numel(timestamps)-1)
     end
 end  
 recStartDataPoint(end+1) = numel(timestamps)+1; %% new
-%condData.times = condData.newTimes;
 
+
+if ~isequal(sort(condDataIDs),sort(unique(condData.codes)))
+    warning('Wrong conditions, please check again');
+end    
+
+sessionInfo.session.path = basePath;
+sessionInfo.session.name = sessionName;
+sessionInfo.session.experimentName = experimentName;
+sessionInfo.nChannels = channelNo;
+sessionInfo.recordingDepth = recordingDepth;
+sessionInfo.conditionNames = conditionNames;
+sessionInfo.trialDuration = trialDuration;
+sessionInfo.preTrialTime = preTrialTime;
+sessionInfo.afterTrialTime = afterTrialTime; 
+sessionInfo.visStim = visStim;
+sessionInfo.optStimInterval = optStimInterval;
+sessionInfo.probe = probe;
+sessionInfo.animal = animal;
+sessionInfo.recRegion = recRegion;
+sessionInfo.nShanks = str2num(sessionInfo.probe(1));
+sessionInfo.chOffset = chOffset;
 sessionInfo.rates.wideband = samplingRate;
 sessionInfo.condData = condData;
 timeSeries.recStartDataPoint = recStartDataPoint;
@@ -212,6 +225,13 @@ plot(1:channelNo,std_ch);
 xlabel('no. channel');
 ylabel('channel STD');
 
+if numel(recordingDepth)>1
+    if (recordingDepth(1) > recordingDepth(2) && recRegion(1) == 'L') || (recordingDepth(1) < recordingDepth(2) && recRegion(1) == 'R')
+        warning('Are you sure the electrode depths and the recorded region are correct?')
+    end
+end    
+    
+    
 timeSeries.dataPoints= dataPoints;
 timeSeries.timestamps = timestamps;
 timeSeries.info = info;
@@ -221,7 +241,7 @@ timeSeries.stdCh = std_ch;
 %% Calculations for fig with epochs + plot figure
 close all
 
-selCh = 1; % selected channel for figure and calculation 
+selCh = 8; % selected channel for figure and calculation 
 totalEpochs = numel(condData.codes);
 
 std_z = zeros(totalEpochs,1);
@@ -283,10 +303,10 @@ end
 if exist('max_z_filt1', 'var') == 1
     subplot(totalSubplots,1,7)
     plot(max_z_filt1); hold on
-    plot(xlim, [1 1]*327, '--k')
-    plot(xlim, [1 1]*655, '--g')
-    plot(xlim, [1 1]*1638, '--b')
-    plot(xlim, [1 1]*3276, '--r')
+    plot(xlim, [1 1]*327, '--k') % gain 1002020-12-01_15-18-49
+    plot(xlim, [1 1]*655, '--g') % gain 50
+    plot(xlim, [1 1]*1638, '--b') % gain 20
+    plot(xlim, [1 1]*3276, '--r') % gain 10
     ylabel('Max @150 Hz');    
     set(gca, 'YScale', 'log')
 end
@@ -325,7 +345,7 @@ range2 = [];
 % leave it empty
 subTrialsForAnalysis = 1:numel(recStartDataPoint)-1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-exclude = [16,41,73]; %state here what trials you want to exclude
+exclude = []; %state here what trials you want to exclude
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subTrialsForAnalysis = countformepls(subTrialsForAnalysis,totalConds,exclude);
 
@@ -350,34 +370,34 @@ timeSeries.timestampsRange  = timeSeries.timestamps(timeSeries.range1);
 timeSeries.trialsForAnalysis = timeSeries.subTrialsForAnalysis(totalConds:totalConds:end)/totalConds
 
 close all
-clearvars -except range1 data channelNo dataPoints timeSeries sessionInfo filenameSessionInfo filenameTimeSeries experimentName sessionName basePathKilosort
+% clearvars z z_filt1 z_filt2 x1 y1 y2 y3 % possibly redundant if the next line also deletes global variables
+clearvars -except range1 channelNo dataPoints timeSeries sessionInfo filenameSessionInfo filenameTimeSeries experimentName sessionName basePathKilosort basePathData chOffset dataEv timestampsEv
 
 %% filter the selected data set
-
 data_filt = zeros(channelNo, numel(range1));
+artefactCh = 7;
 
 for j = 1:channelNo    
+    filename = ['100_CH', num2str(j+chOffset), '.continuous'];
+    [data(1,:), timestamps(:,1), info(:,1)] = load_open_ephys_data_faster([basePathData, filesep, filename]);
+    deleteArtefact
     disp(['Filtering channel ', num2str(j), '...'])
-    data_filt(j,:) = highpass(data(j,range1), 150, sessionInfo.rates.wideband); % highpass 150 Hz
+    data_filt(j,:) = highpass(data(1,range1), 150, sessionInfo.rates.wideband); % highpass 150 Hz
 end
-
-clearvars data
 
 m = max(max(max(data_filt)), -min(min(data_filt)));
 disp(['Maximum value: ', num2str(round(m))]);
 gain = suggestGain(m);
 disp(['Suggested gain: ', num2str(gain)]);
 
-
 % flat subset of data 
 %gain = 20
-% datavector = reshape(gain*data_filt, [1, numel(range1)*channelNo]);  % max ist 32000
-datavector = gain * data_filt; % not really vector
-%clearvars -except datavector sessionInfo timeSeries
-disp(['Maximum Value: ',num2str(round(max(max(datavector))))])
-disp(['data points above maximum threshold: ',num2str(sum(sum(datavector>32768)))]) % should not be larger than 1 000 x channelNo
-disp(['Minimum Value: ',num2str(round(min(min(datavector))))])
-disp(['data points below minimum threshold: ',num2str(sum(sum(datavector<-32768)))]) % should not be larger than 1 000 x channelNo
+data_filt = gain * data_filt; 
+
+disp(['Maximum Value: ',num2str(round(max(max(data_filt))))])
+disp(['data points above maximum threshold: ',num2str(sum(sum(data_filt>32768)))]) % should not be larger than 1 000 x channelNo
+disp(['Minimum Value: ',num2str(round(min(min(data_filt))))])
+disp(['data points below minimum threshold: ',num2str(sum(sum(data_filt<-32768)))]) % should not be larger than 1 000 x channelNo
 
 timeSeries.gain = gain;
 
@@ -388,7 +408,7 @@ if exist(datFilename,'file')
     warning('.dat file already exists.')
 else    
     f = fopen(datFilename, 'w');
-    fwrite(f, datavector, 'int16');
+    fwrite(f, data_filt, 'int16');
     fclose(f);
 end    
 

@@ -34,7 +34,7 @@ samplingRate = sessionInfo.rates.wideband;
 
 for i=(1:channelNo)
     filename = ['100_CH', num2str(i), '.continuous'];
-    [data(i,:), timestamps(:,1), info(:,i)] = load_open_ephys_data([basePathData, filesep, filename]);
+    [data(i,:), timestamps(:,1), info(:,i)] = load_open_ephys_data_faster([basePathData, filesep, filename]);
     med(i) = median(data(i,:));
     data(i,:) = data(i,:) - med(i);
 end

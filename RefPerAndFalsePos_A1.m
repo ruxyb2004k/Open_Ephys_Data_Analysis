@@ -12,20 +12,20 @@ histoBin = 0.0005; % in sec
 ref_per = 0.002; % refractory period
 cens_per = 0.0005;% censored period
 
-path = strsplit(pwd,filesep);
-basePath = strjoin({path{1:end-1}, 'Open Ephys Data', experimentName}, filesep);
-basePathData = strjoin({basePath, 'data'}, filesep);
-basePathKlusta = strjoin({basePath, 'klusta analysis'}, filesep);
-basePathMatlab = strjoin({basePath, 'matlab analysis'}, filesep);
-
-filenameSessionInfo = fullfile(basePathMatlab,[sessionName,'.sessionInfo.mat']); % general info about the session
-filenameTimeSeries = fullfile(basePathMatlab,[sessionName,'.timeSeries.mat']); % time series info
-filenameSpikeClusterData = fullfile(basePathMatlab,[sessionName,'.spikeClusterData.mat']); % spike cluster data
-
-
-[sessionInfo, SIexist] = tryLoad('sessionInfo', filenameSessionInfo);
-[timeSeries, TSexist] = tryLoad('timeSeries', filenameTimeSeries);
-[spikeClusterData, SCDexist] = tryLoad('spikeClusterData', filenameSpikeClusterData);
+% uncomment the next lines only if this script is run separately from another script (like SpikeDataLoading)
+% path = strsplit(pwd,filesep);
+% basePath = strjoin({path{1:end-1}, 'Open Ephys Data', experimentName}, filesep);
+% basePathData = strjoin({basePath, 'data'}, filesep);
+% basePathKlusta = strjoin({basePath, 'klusta analysis'}, filesep);
+% basePathMatlab = strjoin({basePath, 'matlab analysis'}, filesep);
+% 
+% filenameSessionInfo = fullfile(basePathMatlab,[sessionName,'.sessionInfo.mat']); % general info about the session
+% filenameTimeSeries = fullfile(basePathMatlab,[sessionName,'.timeSeries.mat']); % time series info
+% filenameSpikeClusterData = fullfile(basePathMatlab,[sessionName,'.spikeClusterData.mat']); % spike cluster data
+% 
+% [sessionInfo, SIexist] = tryLoad('sessionInfo', filenameSessionInfo);
+% [timeSeries, TSexist] = tryLoad('timeSeries', filenameTimeSeries);
+% [spikeClusterData, SCDexist] = tryLoad('spikeClusterData', filenameSpikeClusterData);
 
 totalConds = numel(fieldnames(sessionInfo.conditionNames));
 
@@ -116,7 +116,7 @@ for ind = 1:totalCodes
     end
     spikeClusterData.ACC25(ind,:) = histoc_correl;
     
-    disp(['cluster ', num2str(clusterCode), ', refractory period ratio ', num2str(refrPeriodRatio(ind)), ', min ISI ' , num2str(min(z(ind1))), ', presence % ', num2str(presence(ind)*100), ', False positives ', num2str(falsePos(ind))]); % check if there is any ISI smaller thn 0.5 ms
+%     disp(['cluster ', num2str(clusterCode), ', refractory period ratio ', num2str(refrPeriodRatio(ind)), ', min ISI ' , num2str(min(z(ind1))), ', presence % ', num2str(presence(ind)*100), ', False positives ', num2str(falsePos(ind))]); % check if there is any ISI smaller thn 0.5 ms
 end
 
 disp(['Total possible SUAs: ', num2str(sum(refrPeriodRatio<=0.125 | isnan(refrPeriodRatio)))]);

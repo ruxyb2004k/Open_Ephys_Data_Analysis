@@ -1,8 +1,8 @@
 %%% Load matlab data from open ephys kwik files. 
 %%% modified 13.07.2020 by Ruxandra %%%
 
-% experimentName = '2020-09-23_14-18-30'
-% sessionName = 'V1_20200923_1'
+% experimentName = '2020-09-22_12-37-59'
+% sessionName = 'V1_20200922_1'
 
 clearvars -except experimentName sessionName
 

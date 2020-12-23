@@ -10,11 +10,12 @@ filt = true(numFilt,size(expSet,2));
 %%%%%%% add filter here %%%%%%%
 
 filt(1,:) = [expSet.trialDuration] == 18;
-filt(2,:) = strcmp({expSet.animalStrain}, 'PvCre');
+filt(2,:) = strcmp({expSet.animalStrain}, 'NexCre');
 % filt(3,:) = strcmp({expSet.experimentName}, '2020-08-11_15-44-59');
-filt(4,:) = ~(contains({expSet.experimentName}, '2019-07-08') | contains({expSet.experimentName}, '2019-10-24'));
+% filt(4,:) = ~(contains({expSet.experimentName}, '2020-11-12_14-20-47') | contains({expSet.experimentName}, '2020-12-01_13-58-50') | contains({expSet.experimentName},'2020-12-03_14-41-44'));
 % filt(5,:) = contains({expSet.animalName}, '20200730') | contains({expSet.animalName}, '20200805');
-filt(6,:) = [repelem(1,69),repelem(0,4)];
+filt(6,:) = [repelem(0,71),repelem(1,37)];
+filt(7,:) = [expSet.expSel] == 1;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -56,7 +57,7 @@ for i =1:(size(expSetFilt,2))
     
     clusterTimeSeries = adjustStruct(clusterTimeSeries); % add 2 extra fields: iSelectedCodesInd and iSelectedCodesIndSpont   
     
-    % expand Sua and Mua structures containing experiment information
+%     % expand Sua and Mua structures containing experiment information
     currUnitsSua = size(expSetFiltSua,2);
     expSua = size(clusterTimeSeries.traceFreqGood,2);
     expSetFiltSua(currUnitsSua+1:currUnitsSua+expSua) = expSetFilt(i);
@@ -82,8 +83,6 @@ end
 expSetFiltSua(1) = []; % delete empty first row
 expSetFiltMua(1) = []; % delete empty first row
 
-%% 
-
 % extract name and number of hemispheres
 hemNames = unique({expSetFilt.animalName});
 noHems = numel(hemNames);
@@ -93,13 +92,15 @@ animalNames = hemNames;
 noAnimals = noHems;
 
 % unique animal names
-[yy,~,i] = unique({expSetFiltSua.animalName},'stable');
-suaEachAnimal = accumarray(i(:),1,[numel(yy),1]); % previously called animals
+[animNames,~,i] = unique({expSetFiltSua.animalName},'stable');
+suaEachAnimal = accumarray(i(:),1,[numel(animNames),1]); % previously called animals
 
 
 C = [[0 0 0]; [0 0 1]; [0 0.4470 0.7410]; [0.5 0.5 0.5]]; % black, navy-blue, blue, gray - traces
 % asign each animal a color
 C_animal = [[0 0.4470 0.7410]; [0.8500 0.3250 0.0980]; [0.9290 0.6940 0.1250]; [0.4940 0.1840 0.5560];...
+    [0.4660 0.6740 0.1880]; [0.3010 0.7450 0.9330]; [1 0 1]; [1 0 0]; [0 1 0]; [1 1 0]; [0 0 1]; [0.5 0.5 0.5];...
+    [0 0.4470 0.7410]; [0.8500 0.3250 0.0980]; [0.9290 0.6940 0.1250]; [0.4940 0.1840 0.5560];...
     [0.4660 0.6740 0.1880]; [0.3010 0.7450 0.9330]; [1 0 1]; [1 0 0]; [0 1 0]; [1 1 0]; [0 0 1]; [0.5 0.5 0.5];...
     [0 0.4470 0.7410]; [0.8500 0.3250 0.0980]; [0.9290 0.6940 0.1250]; [0.4940 0.1840 0.5560];...
     [0.4660 0.6740 0.1880]; [0.3010 0.7450 0.9330]; [1 0 1]; [1 0 0]; [0 1 0]; [1 1 0]; [0 0 1]; [0.5 0.5 0.5];...
@@ -110,13 +111,12 @@ for animal = 1:noAnimals
     C_units = [C_units; repmat(C_animal(animal,:),suaEachAnimal(animal),1)];
 end
 
-saveFigs = true;
-savePath = [strjoin({path{1:end}, 'figs', 'PvCre', 'short', 'spont'}, filesep), filesep];
 fs = 24; %font size
 smooth_method = 'moving';
 classUnitsAll = ([cellMetricsAll.troughPeakTime]< 0.5) + 1; % subject to change - different criteria; 1 = pyr, 2 = inh
 EIColor = 'gr';
-%% Analysis for Figs xx - yy -
+
+% Analysis for Figs xx - yy -
 
 totalConds = numel(fieldnames(sessionInfoAll.conditionNames)); % number of conditions
 totalDatapoints = size(clusterTimeSeriesAll.traceFreqGood,3); % number of data time points
@@ -126,16 +126,22 @@ bin = clusterTimeSeriesAll.bin;
 plotBeg = -sessionInfoAll.preTrialTime + bin;
 plotEnd = sessionInfoAll.trialDuration + sessionInfoAll.afterTrialTime;
 
-%% apply filters to the unit data set here %%%
+%% 
+%%%%%%%%%%% apply filters to the unit data set here %%%%%%%%%%%%%%%%
 
 iUnitsFilt = repelem(1, size(cellMetricsAll.waveformCodes,1)); % all units
-iUnitsFilt = iUnitsFilt &  clusterTimeSeriesAll.iSelectedCodesInd == 1; % only selected
+iUnitsFilt = iUnitsFilt &  clusterTimeSeriesAll.iSelectedCodesInd == 1; % only selected = 1
 iUnitsFilt = iUnitsFilt & clusterTimeSeriesAll.iSelectedCodesIndSpont == 1 ; % only evoked = 0 or spont = 1
-% iUnitsFilt = iUnitsFilt &  classUnitsAll == 1; % only specifiy cell type: 1 = pyr, 2 = inh
+% iUnitsFilt = iUnitsFilt &  classUnitsAll == 2; % only specifiy cell type: 1 = pyr, 2 = inh
 
+saveFigs = true;
+savePath = [strjoin({path{1:end}, 'figs','2020-12', 'NexCre', 'long', 'spont'}, filesep), filesep];%, 'spont'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 totalUnits = size(iUnitsFilt,2);
 totalUnitsFilt = sum(iUnitsFilt);
+
+disp(['Total excitatory units: ', num2str(sum(classUnitsAll(iUnitsFilt) == 1))]);
+disp(['Total inhibitory units: ', num2str(sum(classUnitsAll(iUnitsFilt) == 2))]);
 
 %% Fig 15 - waveform figures
 
@@ -160,11 +166,12 @@ for unit = find(iUnitsFilt)
 end
 xlabel('Time (ms)')
 % ylim([-1,1.52])
-ylim([-1,1])
+ylim([-1,1.5])
 title(titleFig15{2},'FontSize',18);
 box off
 if saveFigs == true
     savefig(strcat(savePath, saveFig15{2}));
+    saveas(gcf, strcat(savePath, saveFig15{2}(1:end-3), 'png'));
 end
 
 
@@ -173,9 +180,9 @@ end
 % figure;
 % for unit = find(iUnitsFilt)
 %     if classUnitsAll(unit) == 1
-%         plot(cellMetricsAll.peakTroughRatio(unit), cellMetricsAll.troughPeakTime(unit), 'Marker','^','MarkerSize',20,'Color', C_units(unit,:)); hold on
+%         plot(cellMetricsAll.peakTroughRatio(unit), cellMetricsAll.troughPeakTime(unit), 'Marker','^','MarkerSize',10,'Color', C_units(unit,:)); hold on
 %     elseif classUnitsAll(unit) == 2
-%         plot(cellMetricsAll.peakTroughRatio(unit), cellMetricsAll.troughPeakTime(unit), 'Marker','o','MarkerSize',20,'Color', C_units(unit,:)); hold on
+%         plot(cellMetricsAll.peakTroughRatio(unit), cellMetricsAll.troughPeakTime(unit), 'Marker','o','MarkerSize',10,'Color', C_units(unit,:)); hold on
 %     end
 %     text(cellMetricsAll.peakTroughRatio(unit), cellMetricsAll.troughPeakTime(unit), num2str(unit), 'Color', C_units(unit,:), 'FontSize',8, 'HorizontalAlignment','center'); hold on
 % end
@@ -190,12 +197,12 @@ end
 % Fig. 15d: plot time vs peak asymmetry
 figure; 
 for unit = find(iUnitsFilt)
-    if classUnitsAll(unit) == 1
-%         plot(cellMetricsAll.troughPeakTime(unit), cellMetricsAll.peakAsymmetry(unit), 'Marker','^','MarkerSize',20,'Color', C_units(unit,:)); hold on
-        plot(cellMetricsAll.troughPeakTime(unit), cellMetricsAll.peakAsymmetry(unit), 'Marker','^','MarkerSize',20,'Color', 'g'); hold on
-    elseif classUnitsAll(unit) == 2
-%         plot(cellMetricsAll.troughPeakTime(unit), cellMetricsAll.peakAsymmetry(unit), 'Marker','o','MarkerSize',20,'Color', C_units(unit,:)); hold on
-        plot(cellMetricsAll.troughPeakTime(unit), cellMetricsAll.peakAsymmetry(unit), 'Marker','o','MarkerSize',20,'Color', 'r'); hold on
+    if classUnitsAll(unit) == 1 % excitatory
+%         plot(cellMetricsAll.troughPeakTime(unit), cellMetricsAll.peakAsymmetry(unit), 'Marker','^','MarkerSize',10,'Color', C_units(unit,:)); hold on
+        plot(cellMetricsAll.troughPeakTime(unit), cellMetricsAll.peakAsymmetry(unit), 'Marker','^','MarkerSize',10,'Color', 'g'); hold on
+    elseif classUnitsAll(unit) == 2 % inhibitory
+%         plot(cellMetricsAll.troughPeakTime(unit), cellMetricsAll.peakAsymmetry(unit), 'Marker','o','MarkerSize',10,'Color', C_units(unit,:)); hold on
+        plot(cellMetricsAll.troughPeakTime(unit), cellMetricsAll.peakAsymmetry(unit), 'Marker','o','MarkerSize',10,'Color', 'r'); hold on
     end    
 %     text(cellMetricsAll.troughPeakTime(unit), cellMetricsAll.peakAsymmetry(unit), num2str(unit), 'Color', C_units(unit,:), 'FontSize',8, 'HorizontalAlignment','center'); hold on   
 end
@@ -204,8 +211,10 @@ ylabel('peak asymmetry (P2-P1)/(P2+P1)');
 title(titleFig15{4},'FontSize',18);
 if saveFigs == true
     savefig(strcat(savePath, saveFig15{4}));
+    saveas(gcf, strcat(savePath, saveFig15{4}(1:end-3), 'png'));% works, but file is not saved as vector
+%     print('-painters', '-depsc')% save file as vector image
 end
- 
+
 % Fig. 15e: 3D plot time vs ratio vs peak asymmetry
 figure; 
 scatter3(cellMetricsAll.troughPeakTime(classUnitsAll ==1),  cellMetricsAll.peakTroughRatio(classUnitsAll ==1), cellMetricsAll.peakAsymmetry(classUnitsAll ==1), '^'); hold on
@@ -221,6 +230,8 @@ grid off
 if saveFigs == true
     savefig(strcat(savePath, saveFig15{5}));
 end
+
+
 
 %% Analysis for Fig. 1 (2x): average of timecourses 
 
@@ -297,6 +308,8 @@ for cond = (1:2:totalConds)
     shadedErrorBar1((plotBeg:bin:plotEnd),meanTraceFreqAll(cond+1,:),STEMtraceFreqAll(cond+1,:), {'Color', C(2,:)}); hold on
     if saveFigs == true
         savefig(strcat(savePath, saveFig1{(cond+1)/2}));
+        title('');
+        saveas(gcf, strcat(savePath, saveFig1{(cond+1)/2}(1:end-3), 'png'));
     end
 end
 
@@ -503,7 +516,7 @@ for cond = (1:2:totalConds)
             text(stim, y+0.1*sign(y),'**','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
         elseif p_temp <= 0.05
             text(stim, y+0.1*sign(y),'*','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
-    end
+        end
     end    
     if saveFigs == true
         savefig(strcat(savePath, saveFig3{(cond+1)/2}));
@@ -572,24 +585,40 @@ for cond = (1:2:totalConds)
     plot((1:numel(baseStim)),meanNormAllStimBase(cond,:),'LineWidth', 3, 'Color', C(1,:)); hold on
     plot((1:numel(baseStim)),meanNormAllStimBase(cond+1,:),'LineWidth', 3, 'Color', C(2,:)); hold on
     
-    min_hist = -1;
+%     min_hist = -1;
     max_hist1 = 1.5;
     xlabel('Stim#');
     ylabel('Normalized baseline ');
     set(ax,'XLim',[0.8 numel(baseStim)+0.2],'FontSize',fs);
     set(ax,'xtick',[1:1:numel(baseStim)]) % set major ticks
     set(ax, 'TickDir', 'out');
-    set(ax,'YLim',[min_hist max_hist1],'FontSize',fs)
+%     set(ax,'YLim',[min_hist max_hist1],'FontSize',fs)
 %     set(gca,'FontSize',fs, 'XTickLabel',{'Base. 1','Base. 2', 'Base. 3'},'XTick',[1 2 3]);
     set(ax,'FontSize',fs)
     title(titleFig4{(cond+1)/2});
     background = get(gcf, 'color');
-    h1 = line([1.7 4.3],[max_hist1 max_hist1]);
-    set(h1,'Color',[0.25 0.61 1] ,'LineWidth',4);% Set properties of lines
+
     errorbar((1:numel(baseStim)),meanNormAllStimBase(cond,:),STEMnormAllStimBase(cond,:), 'Color', C(1,:)); hold on
     errorbar((1:numel(baseStim)),meanNormAllStimBase(cond+1,:),STEMnormAllStimBase(cond+1,:), 'Color', C(2,:)); hold on
+    for stim = 1:totalStim
+        p_temp =  pNormAllStimBase((cond+1)/2,stim,2);
+        y = max(meanNormAllStimBase(cond:cond+1,stim)+STEMnormAllStimBase(cond:cond+1,stim));
+%         text(stim, y+0.5*sign(y), num2str(p_temp),'FontSize',8, 'HorizontalAlignment','center');
+        if p_temp <= 0.001
+            text(stim, y+0.1*sign(y),'***','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
+        elseif p_temp <= 0.01
+            text(stim, y+0.1*sign(y),'**','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
+        elseif p_temp <= 0.05
+            text(stim, y+0.1*sign(y),'*','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
+        end
+    end 
+    yl=ylim;
+    h1 = line([1.7 4.3],[yl(2)*0.99 yl(2)*0.99]);    
+    set(h1,'Color',[0.25 0.61 1] ,'LineWidth',4);% Set properties of lines
     if saveFigs == true
         savefig(strcat(savePath, saveFig4{(cond+1)/2}));
+        title('');
+        saveas(gcf, strcat(savePath, saveFig4{(cond+1)/2}(1:end-3), 'png'));
     end
 end
 
@@ -818,7 +847,7 @@ if totalStim == 1
         ylabel('Normalized amplitude');
         set(ax,'XLim',[0.8 1.2],'FontSize',fs);
         set(ax, 'TickDir', 'out');
-        set(ax,'YLim',[min_hist max_hist1],'FontSize',fs)
+%         set(ax,'YLim',[min_hist max_hist1],'FontSize',fs)
         set(ax,'FontSize',fs)
         title(titleFig6a{(cond+1)/2},'FontSize',18);
         background = get(gcf, 'color');
@@ -853,6 +882,17 @@ if totalStim == 6
     set(ax,'XLim',[0.8 totalStim+0.2],'FontSize',fs);
     errorbar((1:totalStim),meanNormAllStimAmpl100(1,:),STEMnormAllStimAmpl100(1,:), 'Color', C(1,:)); hold on
     errorbar((1:totalStim),meanNormAllStimAmpl100(2,:),STEMnormAllStimAmpl100(2,:), 'Color', C(2,:)); hold on
+    for stim = 1:totalStim
+        p_temp =  pNormAllStimAmpl100((cond+1)/2, stim);
+        y = max(meanNormAllStimAmpl100(cond:cond+1, stim)+STEMnormAllStimAmpl100(cond:cond+1, stim));
+        if p_temp <= 0.001
+            text(stim, y+0.05*sign(y),'***','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
+        elseif p_temp <= 0.01
+            text(stim, y+0.05*sign(y),'**','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
+        elseif p_temp <= 0.05
+            text(stim, y+0.05*sign(y),'*','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
+        end
+    end  
 elseif totalStim == 1
     plot((1:totalConds/2),meanNormAllStimAmpl100(1:2:end, :),'Marker','.','LineWidth', 3, 'Color', C(1,:)); hold on
     plot((1:totalConds/2),meanNormAllStimAmpl100(2:2:end, :),'Marker','.','LineWidth', 3, 'Color', C(2,:)); hold on
@@ -880,7 +920,7 @@ end
     ylabel('Normalized amplitude');
     
     set(ax, 'TickDir', 'out');
-    set(ax,'YLim',[-0.2 max_hist1]);
+%     set(ax,'YLim',[-0.2 max_hist1]);
     set(ax,'FontSize',fs)
     set(ax,'FontSize',fs)
     title(titleFig6b,'FontSize',18);
@@ -889,6 +929,9 @@ end
      
 if saveFigs == true
     savefig(strcat(savePath, saveFig6b{1}));
+    title('');
+    saveas(gcf, strcat(savePath, saveFig6b{1}(1:end-3), 'png'));
+    
 end
 
 %% Analysis Fig. 7, 8 - Opto-index and ratio of baselines in photostim vs non-photostim. conditions
@@ -1236,7 +1279,7 @@ if totalStim ==6
         figure
         ax = gca;
         hold on
-        b = bar((1:totalUnits),sortOIndexAllStimAmpl((cond+1)/2,:,stim));
+        b = bar((1:totalUnits),sortOIndexAllStimAmpl((cond+1)/2,:,stim), 'EdgeColor', [0 0 0]);
         b.FaceColor = 'flat';
         for unit = 1:totalUnitsFilt
             %         b.CData(unit,:) = C_units(indexOIndexAllStimAmpl((cond+1)/2,unit,stim),:);
@@ -1825,7 +1868,7 @@ if saveFigs == true
     savefig(strcat(savePath, saveFig13a{1}));
 end
 
-%% Fig. 13c (1x) : average amplitude - baseline
+%% Fig. 13c (1x) : average amplitude - baseline on normalized traces
 titleFig13c = {'Amplitude - baseline +/- photostim. from norm trace'};
 
 saveFig13c = {'meanAmplMinusBaseNormTrace.fig'};

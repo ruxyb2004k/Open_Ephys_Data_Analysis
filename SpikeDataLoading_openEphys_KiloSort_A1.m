@@ -1,11 +1,11 @@
 %%% Load matlab data from open ephys kwik files. 
 %%% modified 13.07.2020 by Ruxandra %%%
 
-% experimentName = '2020-09-22_12-37-59_trial5'
-% sessionName = 'V1_20200922_1'
+% experimentName = '2020-09-30_12-45-52'
+% sessionName = 'V1_20200930_2'
 
-clearvars -except experimentName sessionName
-% ks= get(gcf, 'UserData'); ks.ops.fshigh = 300;
+clearvars -except experimentName sessionName a
+%ks= get(gcf, 'UserData');ks.ops.fshigh = 300;ks.ops.Th = [10, 6];
 
 path = strsplit(pwd,filesep);
 basePath = strjoin({path{1:end-1}, 'Open Ephys Data', experimentName}, filesep);
@@ -41,32 +41,33 @@ if ~SCDexist
     spikeClusterData.channelPosition = double(readNPY(fullfile(basePathKilosort,'channel_positions.npy'))); % column 2 is the depth, where 0 is the tip of the electrode and all other channels have positive depths
     spikeClusterData.channelShank = rez.ops.kcoords; 
     
-    cl = []; % cluster labels
-    if exist(fullfile(basePathKilosort,'cluster_group.tsv'), 'file') %
-        [~, cl] = readClusterGroupsCSV(fullfile(basePathKilosort,'cluster_group.tsv')); % spikeClusterData.uniqueCodesLabel is 0(noise), 1(mua) or 2(good)
+    cl = []; % cluster labels 
+    if exist(fullfile(basePathKilosort,'cluster_group.tsv'), 'file') % cluster labels after manual curation
+        [cc, cl] = readClusterGroupsCSV(fullfile(basePathKilosort,'cluster_group.tsv')); % spikeClusterData.uniqueCodesLabel is 0(noise), 1(mua) or 2(good)
     end
-    if isempty(cl) % if cluster_groups.tsv doesn't exist or is empty
-        [~, cl] = readClusterGroupsCSV(fullfile(basePathKilosort,'cluster_KSLabel.tsv')); % spikeClusterData.uniqueCodesLabel is 0(noise), 1(mua) or 2(good)
+    if isempty(cl) % if cluster_groups.tsv doesn't exist or is empty, use cluster_KSLabel.tsv (labels before manual curation)
+        [cc, cl] = readClusterGroupsCSV(fullfile(basePathKilosort,'cluster_KSLabel.tsv')); % spikeClusterData.uniqueCodesLabel is 0(noise), 1(mua) or 2(good)
         warning('Using automatic good/mua labels');
     end
-    spikeClusterData.uniqueCodesLabel = cl';
+    clIdx = ismember(cc,spikeClusterData.uniqueCodes(:,1));
+    spikeClusterData.uniqueCodesLabel = cl(clIdx)';
     
     spikeClusterData.uniqueCodes(:,2) = 0; % intially, all clusters are considered to be on channel 0
     if exist(fullfile(basePathKilosort,'cluster_info.tsv'), 'file') % if the clusters were saved after inspecting them with phy this file should exist
         [~, ch] = readClusterInfoCSV(fullfile(basePathKilosort,'cluster_info.tsv')); % extract the channels for each cluster
         spikeClusterData.uniqueCodes(:,2) = ch'; 
         disp('Channels for each cluster imported from cluster_info.tsv');
-    end   
+    end
+    warning('Please double-check the channel numbers in spikeClusterData.uniqueCodes');
     if exist(fullfile(basePathKilosort,'cluster_ContamPct.tsv'), 'file') % if the clusters were saved after inspecting them with phy this file should exist
         [~, cp] = readClusterContamPctCSV(fullfile(basePathKilosort,'cluster_ContamPct.tsv')); % extract the contamination percentage for each cluster
         spikeClusterData.uniqueCodesContamPct(:,1) = cp'; 
         disp('Contamination percentage for each cluster imported from cluster_info.tsv');
     end    
-    warning('Please double-check the channel numbers');
+    openvar('spikeClusterData.uniqueCodes')
 end
 
 %% verify first in kilosort if the channels fit the cluster codes and insert manually the channel number...
-
 if ~SCDexist
     % ...for each cluster code in 2nd column of spikeClusterData.uniqueCodes, then run the next command
     spikeClusterData.uniqueCodesChannel(:,1) = spikeClusterData.uniqueCodes(:,2);
@@ -76,7 +77,7 @@ if ~SCDexist
 
     % calculate the depth of each channel based on the recording depth
     codeShank = spikeClusterData.channelShank(spikeClusterData.uniqueCodesChannel+1);% for multiple shanks
-    spikeClusterData.uniqueCodesRealDepth(:,1) = sessionInfo.recordingDepth(codeShank)' + spikeClusterData.uniqueCodesDepth(:,1); 
+    spikeClusterData.uniqueCodesRealDepth(:,1) = sessionInfo.recordingDepth(codeShank) + spikeClusterData.uniqueCodesDepth(:,1); 
 
     unclCodes = []; % unclassified codes
     goodCodes = [];
@@ -107,7 +108,7 @@ if ~SCDexist
     
     %adjust the spike times from kilosort to the real recording times
     j=1;
-    for i=(1:numel(spikeClusterData.times))
+    for i=(1:numel(spikeClusterData.times)) % spike times
         while spikeClusterData.times(i) > kilosortTime(j) % search for each spike time in the the kilosortTime, then take the time index and match it to timestamp index.
             j = j+1;
         end
@@ -117,7 +118,7 @@ if ~SCDexist
 end
 %%
 % modify when selecting different trials than already selected in load_command
-% spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis([1:13,15]);
+% spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis([2:end-1]);
 
 conditionFieldnames = fieldnames(sessionInfo.conditionNames); % extract conditionNames (c0visStim c100visStim etc)
 totalConds = numel(conditionFieldnames);
@@ -162,6 +163,9 @@ spikeClusterData.spikeTimes = spikeTimes
 
 RefPerAndFalsePos_A1
 
+if numel(spikeClusterData.trialsForAnalysisSelected) ~= numel(timeSeries.trialsForAnalysis)
+    warning('Are you sure some trials should be missing? Check spikeClusterData.trialsForAnalysisSelected on line 120 ');
+end    
 %%
 if exist(filenameSpikeClusterData,'file')
     warning('.spikeClusterData.mat file already exists.')

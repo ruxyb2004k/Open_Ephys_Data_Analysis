@@ -22,9 +22,14 @@ zlabel('peak asymmetry (P2-P1)/(P2+P1)');
 classUnitsAll= idx;
 
 %% cluster based on only two features 
-Y = [cellMetricsAll.troughPeakTime;cellMetricsAll.peakAsymmetry]';
+Y = [cellMetricsAll.troughPeakTime(iUnitsFilt);cellMetricsAll.peakAsymmetry(iUnitsFilt)]';
 k = 2;
-[idx1,Centroids1] = kmeans(Y,k);
+[idx1,Centroids1] = kmeans(Y,k);% same as [idx1,Centroids1] = kmedoids(Y,k);
+
+% [idx1,Centroids1] = spectralcluster(Y,k);
+% GMModel = fitgmdist(Y,k);
+% idx1 = dbscan(Y,1,5);
+
 sum(idx1 == 1)
 sum(idx1 == 2)
 
