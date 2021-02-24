@@ -5,8 +5,8 @@
 
 global i x1 y1 y2 y3 recStartDataPoint z z_filt1 z_filt2 samplingRate
 
-experimentName = '2020-09-30_14-31-53'
-sessionName = 'V1_20200930_3'
+experimentName = '2021-01-28_11-51-43'
+sessionName = 'V1_20210128_1'
 
 
 path = strsplit(pwd,filesep);
@@ -51,25 +51,25 @@ end
 %%
 %%%%%%% insert session-specific paramteres here %%%%%%%%%%
 
-recordingDepth = [-405 -370]'; % !!! Modify for each experiment !!!
+recordingDepth = [-440 -400]'; % !!! Modify for each experiment !!!
 channelNo = 32;
 probe = '2x16_E1';% '1x16_P1' '2x16_E1'
-animal.name = '20201127_LV1';
-animal.sex = 'f';
+animal.name = '20210122_LV1';
+animal.sex = 'm';
 animal.strain = 'PvCre';
 animal.virus = 'AAV9-mOp2A';
 recRegion = 'LV1';
 chOffset = 16; % 0 for 16-channel probes; 16 for 32-channel probe
 
 conditionNames= [];
-conditionNames.c100visStim = 1; % 
-conditionNames.c100optStim = 33; % 
-% conditionNames.c50visStim = 3;
-% conditionNames.c50optStim = 35;
-% conditionNames.c25visStim = 5; % 
-% conditionNames.c25optStim = 37; % 
-% conditionNames.c12visStim = 7; % 
-% conditionNames.c12optStim = 39; % 
+conditionNames.c100visStim = 2; % 
+conditionNames.c100optStim = 34; % 
+% conditionNames.c50visStim = 4;
+% conditionNames.c50optStim = 36;
+% conditionNames.c25visStim = 6; % 
+% conditionNames.c25optStim = 38; % 
+% conditionNames.c12visStim = 8; % 
+% conditionNames.c12optStim = 40; % 
 conditionNames.c0visStim = 0; 
 conditionNames.c0optStim = 32;
 
@@ -104,21 +104,25 @@ trialDuration = 18;% Long stimulation protocol (7)
 preTrialTime = 3; % time before 0 for display
 visStim = (0.2:3:15.2);
 optStimInterval = [2 10];
+visStimDuration = 0.2;
 
 % trialDuration = 9;% Contrast protocol (3)
 % preTrialTime = 2; % time before 0 for display
 % visStim = (7);
 % optStimInterval = [0.2 8.2];
+% visStimDuration = 0.2;
 
 % trialDuration = 6;% Contrast protocol (2)
 % preTrialTime = 2; % time before 0 for display
 % visStim = (4);
 % optStimInterval = [0.2 5.2];
+% visStimDuration = 0.2;
 
 % trialDuration = 7;% Orientation protocol (1)
 % preTrialTime = 2; % time before 0 for display
 % visStim = (4);
 % optStimInterval = [0.2 6];%[2 10];%
+% visStimDuration = 1;
 
 
 %%%%%%%%% experiment-specific parameters end here %%%%%%%%%%
@@ -146,23 +150,7 @@ load([basePathData, filesep, 'order_all_cond.mat']) % load the sequence of all c
 condData.codes = order_all_cond;
 doubleTimes = timestampsEv(dataEv==1);% detect the events corresponding to beginning of all conditions
 condData.times = doubleTimes(1:2:end); % remove the event corresponding to switch off of channel 1 in Master 8
-% subtract non-recorded time from to475tal time
-condData.newTimes = zeros(numel(condData.times),1); % new shifted times for condition begin
-timeDiff = zeros(numel(condData.times),1);
-timeDiff(1) =  timestamps(1);
-condData.newTimes(1) = condData.times(1)-timeDiff(1);
-recStartDataPoint = zeros(numel(condData.times),1);
-recStartDataPoint(1) = 1;
-i=2;
-for timePoint=(1:numel(timestamps)-1)
-    if timestamps(timePoint+1)>timestamps(timePoint)+1 % i more than 1 sec difference
-        recStartDataPoint(i) = timePoint+1;
-        timeDiff(i) = timeDiff(i-1) + timestamps(timePoint+1)-timestamps(timePoint);% add up the pause times
-        condData.newTimes(i) = condData.times(i)-timeDiff(i); %shift time to ignore the break
-        i=i+1;
-    end
-end  
-recStartDataPoint(end+1) = numel(timestamps)+1; %% new
+
 
 
 if ~isequal(sort(condDataIDs),sort(unique(condData.codes)))
@@ -186,33 +174,60 @@ sessionInfo.recRegion = recRegion;
 sessionInfo.nShanks = str2num(sessionInfo.probe(1));
 sessionInfo.chOffset = chOffset;
 sessionInfo.rates.wideband = samplingRate;
-sessionInfo.condData = condData;
-timeSeries.recStartDataPoint = recStartDataPoint;
+sessionInfo.visStimDuration = visStimDuration;
+
 timeSeries.events.dataEv = dataEv;
 timeSeries.events.timestampsEv = timestampsEv;
 timeSeries.events.infoEv = infoEv;
+timestamps1 = timestamps;
 
 % load the rest of the data
 dataPoints = numel(data(1,:));
-data= zeros(channelNo,dataPoints);
+data= nan(channelNo,dataPoints);
 timestamps = zeros(dataPoints,1);
 med = zeros(channelNo,1);
 std_ch = zeros(channelNo,1);
 
 for i=(1:channelNo)
+    clearvars data_ch timestamps
     filename = ['100_CH', num2str(i+chOffset), '.continuous'];
-    [data(i,:), timestamps(:,1), info(:,i)] = load_open_ephys_data_faster([basePathData, filesep, filename]);
+    [data_ch, timestamps(:,1), info(:,i)] = load_open_ephys_data_faster([basePathData, filesep, filename]);
+    data(i,ismember(timestamps1, timestamps)) = data_ch(ismember(timestamps, timestamps1))';% in case a channel is missing data points, this command will align its data with the first loaded channel
     % calculate median over each channel and subtract from channel
-    med(i) = median(data(i,:));
-    std_ch(i) = std(data(i,:));
+    med(i) = nanmedian(data(i,:));
+    std_ch(i) = nanstd(data(i,:));
     data(i,:) = data(i,:) - med(i);
 end
+disp(['Missing / shifted data points: ', num2str(sum(isnan(sum(data,1))))]);
+indx =  ~isnan(sum(data,1));
+ts = timestamps1(indx);
+timestamps = ts;
+% data = data(:, indx);
+
+% subtract non-recorded time from total time
+condData.newTimes = zeros(numel(condData.times),1); % new shifted times for condition begin
+timeDiff = zeros(numel(condData.times),1);
+timeDiff(1) =  timestamps(1);
+condData.newTimes(1) = condData.times(1)-timeDiff(1);
+recStartDataPoint = zeros(numel(condData.times),1);
+recStartDataPoint(1) = 1;
+i=2;
+for timePoint=(1:numel(timestamps)-1)
+    if timestamps(timePoint+1)>timestamps(timePoint)+1 % i more than 1 sec difference
+        recStartDataPoint(i) = timePoint+1;
+        timeDiff(i) = timeDiff(i-1) + timestamps(timePoint+1)-timestamps(timePoint);% add up the pause times
+        condData.newTimes(i) = condData.times(i)-timeDiff(i); %shift time to ignore the break
+        i=i+1;
+    end
+end  
+recStartDataPoint(end+1) = numel(timestamps)+1; %% new
+
 
 artefactCh = 7;
 deleteArtefact
 
 figure
-plot(timestamps(:,1),y(1,:));
+plot(timestamps1(:,1),y(1,:));
 
 figure
 subplot(2,1,1)
@@ -231,7 +246,8 @@ if numel(recordingDepth)>1
     end
 end    
     
-    
+sessionInfo.condData = condData;
+timeSeries.recStartDataPoint = recStartDataPoint;    
 timeSeries.dataPoints= dataPoints;
 timeSeries.timestamps = timestamps;
 timeSeries.info = info;
@@ -241,7 +257,7 @@ timeSeries.stdCh = std_ch;
 %% Calculations for fig with epochs + plot figure
 close all
 
-selCh = 8; % selected channel for figure and calculation 
+selCh = 17; % selected channel for figure and calculation 
 totalEpochs = numel(condData.codes);
 
 std_z = zeros(totalEpochs,1);
@@ -355,12 +371,16 @@ j=1;
 for k = 1:(numel(subTrialsForAnalysis)-1)
     if subTrialsForAnalysis(k+1) ~= subTrialsForAnalysis(k)+1
         range2(j,2) = recStartDataPoint(subTrialsForAnalysis(k)+1)-1;
-        range1 = [range1, range2(j,1):range2(j,2)];
+%         range_part = range2(j,1):range2(j,2);
+%         range1 = [range1, range_part(ismember(range_part, indx))];
+    range1 = [range1, range2(j,1):range2(j,2)];
         j = j+1;
         range2(j,1) = recStartDataPoint(subTrialsForAnalysis(k+1));
     end
 end    
 range2(j,2) = recStartDataPoint(subTrialsForAnalysis(end)+1)-1;
+% range_part = range2(j,1):range2(j,2);
+% range1 = [range1, range_part(ismember(range_part, indx))];
 range1 = [range1, range2(j,1):range2(j,2)];
 
 timeSeries.range1 = range1;
@@ -378,8 +398,11 @@ data_filt = zeros(channelNo, numel(range1));
 artefactCh = 7;
 
 for j = 1:channelNo    
+    clearvars data timestamps
     filename = ['100_CH', num2str(j+chOffset), '.continuous'];
     [data(1,:), timestamps(:,1), info(:,1)] = load_open_ephys_data_faster([basePathData, filesep, filename]);
+%     data(i,ismember(timestamps1, timestamps)) = data_ch(ismember(timestamps, timestamps1))';% in case a channel is missing data points, this command will align its data with the first loaded channel
+
     deleteArtefact
     disp(['Filtering channel ', num2str(j), '...'])
     data_filt(j,:) = highpass(data(1,range1), 150, sessionInfo.rates.wideband); % highpass 150 Hz
@@ -459,6 +482,8 @@ if ~a % if the experiment doesn't already exist, add it and save allExp.mat
     allExp(entry).animalStrain = sessionInfo.animal.strain;
     allExp(entry).animalVirus = sessionInfo.animal.virus;
     allExp(entry).trialDuration = sessionInfo.trialDuration;
+    allExp(entry).expSel1 = 2;
+    allExp(entry).expSel2 = 2;
     % sort the entries by experimentName
     experimentNameValuesNew = extractfield(allExp,'experimentName');
     [x,idx]=sort([experimentNameValuesNew]);

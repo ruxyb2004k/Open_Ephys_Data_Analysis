@@ -7,7 +7,7 @@ switch s
     case 'sessionInfo'
         fields = {'session', 'nChannels', 'recordingDepth', 'conditionNames', 'trialDuration',...
             'preTrialTime', 'afterTrialTime', 'visStim', 'optStimInterval', 'probe', 'animal',...
-            'recRegion', 'rates', 'condData', 'chOffset', 'nShanks'};
+            'recRegion', 'rates', 'condData', 'chOffset', 'nShanks', 'visStimDuration'};
         
     case 'timeSeries'    
         fields = {'recStartDataPoint', 'events', 'dataPoints', 'timestamps', 'info', 'medCh', 'stdCh',...
@@ -17,10 +17,10 @@ switch s
         fields = {'clusterSoftware', 'trialsForAnalysisSelected', 'times', 'channelPosition',...
             'codes', 'uniqueCodes', 'uniqueCodesLabel', 'uniqueCodesChannel', 'uniqueCodesDepth',...
             'uniqueCodesRealDepth', 'rangeTimes', [struct.clusterSoftware, 'Time'], 'unclCodes', 'goodCodes', 'muaCodes'...
-            'noiseCodes', 'spikeTimes', 'ACC25', 'refrPeriodRatio', 'presence', 'falsePos', 'adjGraph', 'channelShank'};
-        if strcmp(struct.clusterSoftware, 'kilosort')
-            fields{end+1} = 'uniqueCodesContamPct'; 
-        end    
+            'noiseCodes', 'spikeTimes', 'ACC25', 'refrPeriodRatio', 'presence', 'falsePos', 'adjGraph', 'channelShank', 'uniqueCodesContamPct'};
+%         if strcmp(struct.clusterSoftware, 'kilosort')
+%             fields{end+1} = 'uniqueCodesContamPct'; 
+%         end    
         
     case 'clusterTimeSeries'
         fields = {'selectedCodes', 'selectedCodesDepth', 'selectedCodesInd', 'selectedCodesIndSpont',...
@@ -33,7 +33,8 @@ switch s
     case 'cellMetrics'
         fields = {'indivTrough', 'waveformDataFilt', 'waveformCodes', 'waveformFiltAvgNorm', 'waveformFiltAvg',...
             'peakTroughRatio', 'troughPeakTime', 'peakAsymmetry', 'minCh', 'normMinCh', 'iMinCh', 'visitedCh',...
-            'waveformCodeChannelNew', 'polarity', 'derivative_TroughtoPeak', 'peakA', 'peakB', 'trough'}; % last two not yet implemented for Klusta
+            'waveformCodeChannelNew', 'polarity', 'derivative_TroughtoPeak', 'peakA', 'peakB', 'trough',...
+            'acg_metrics', 'putativeCellType', 'mono_res', 'putativeConnections','fft_metrics'}; % last two rows not yet implemented for Klusta
          
 end    
 

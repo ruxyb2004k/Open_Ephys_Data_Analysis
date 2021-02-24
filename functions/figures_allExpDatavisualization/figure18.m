@@ -43,5 +43,7 @@ if totalStim == 1
     end
     if saveFigs == true
         savefig(strcat(savePath, saveFig18{1}));
+        title('');
+        saveas(gcf, strcat(savePath, saveFig18{1}(1:end-3), 'png'));
     end
 end    

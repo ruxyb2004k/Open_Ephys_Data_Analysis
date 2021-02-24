@@ -44,7 +44,7 @@ for cond = (1:2:totalConds)
         figure
         ax = gca;
         hold on
-        b = bar((1:totalUnits),sortOIndexAllStimBase((cond+1)/2,:, stim));
+        b = bar((1:totalUnits),sortOIndexAllStimBase((cond+1)/2,:, stim), 'EdgeColor', 'none');
 %         b = bar((1:totalUnitsFilt),sortOIndexAllStimBase((cond+1)/2,(1:totalUnitsFilt), stim));
         b.FaceColor = 'flat';
         for unit = (1:totalUnitsFilt)%find(iUnitsFilt)

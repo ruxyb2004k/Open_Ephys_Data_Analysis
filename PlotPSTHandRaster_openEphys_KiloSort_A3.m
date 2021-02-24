@@ -2,8 +2,8 @@
 %%% It can be executed after spikedataloading.m %%%
 %%% modified 25.02.2019 by Ruxandra %%%
 
-% experimentName = '2020-07-22_18-07-38'
-% sessionName = 'V1_20200722_2'
+% experimentName = '2021-01-13_11-14-23'
+% sessionName = 'V1_20210113_1'
 
 bin = 0.2;
 
@@ -72,8 +72,8 @@ goodCodes = spikeClusterData.goodCodes;
 muaCodes = spikeClusterData.muaCodes;
 noiseCodes = spikeClusterData.noiseCodes;
 titleCode = goodCodes';
-respMat = ones(1, numel(goodCodes))*3;
-respMatMua = ones(1, numel(muaCodes))*1;
+respMat = ones(1, numel(goodCodes))*3; % by default 3 (='none')
+respMatMua = ones(1, numel(muaCodes))*1; % by default 1 (='visEv')
 
 if sum(spikeClusterData.uniqueCodes(:,2)) == 0
 %     goodCodes = spikeClusterData.uniqueCodes(:,1);
@@ -158,7 +158,7 @@ if ~exist('selectedCodesIndSpontNew','var')
     selectedCodesIndSpontNew = [];
 end    
 
-x = [sessionInfo.visStim; sessionInfo.visStim + 0.2]';
+x = [sessionInfo.visStim; sessionInfo.visStim + sessionInfo.visStimDuration]';
 for code = selectedCodesInd%(1:numel(goodCodes))%(20:22) % plot figures for good or selected codes
     r.f = figure;                  
     bg = uibuttongroup('Visible','on',...
@@ -190,10 +190,10 @@ for code = selectedCodesInd%(1:numel(goodCodes))%(20:22) % plot figures for good
 %         set(gca,'FontSize',24);
         set(gca, 'XColor', 'w');
         ylabel(currentConName, 'FontSize',8, 'Color', C(cond,:));
-        if ~contains(conditionFieldnames{cond}, 'c0')
+        if ~contains(conditionFieldnames{cond}, 'c0') % for all conditions with visual stimulation, plot a grey bar
             yl = ylim;
             for i = 1:size(x,1)
-                rectangle('Position', [x(i,1) yl(1) 0.2 yl(2)-yl(1)], 'FaceColor',[0.85 0.85 0.85], 'EdgeColor', 'none');
+                rectangle('Position', [x(i,1) yl(1) sessionInfo.visStimDuration yl(2)-yl(1)], 'FaceColor',[0.85 0.85 0.85], 'EdgeColor', 'none');
             end
         end   
         if mod(cond,2)==0
@@ -309,7 +309,7 @@ statsCodesInd = 1:numel(goodCodes);
 statsSuaF % Stats 1
 
 %% Calculations on selected codes
-
+disp('Calculations on selected codes')
 selectedCodesInd = find(respMat ~=3);
 selectedCodes = goodCodes(selectedCodesInd); % selected codes 
 selectedCodesEv = selectedCodes(~logical(selectedCodesIndSpont));
@@ -325,6 +325,7 @@ traceFreqGoodSel = trace(:, selectedCodesInd, :)/bin/totalTrials;
 writeClusterTimeSeriesSua 
 
 %% Stats 2 + partial save
+disp('Stats 2 + partial save')
 statsCodesInd = selectedCodesInd;%
 statsSuaF
 writeClusterTimeSeriesSuaSel 
@@ -335,7 +336,7 @@ save(filenameClusterTimeSeries, 'clusterTimeSeries')
 
 
 %%%%%%%%% change parameters here %%%%%%%%%
-% selectedCodesIndMuaUser = []; % it will not be considered if it's empty or commented out
+selectedCodesIndMuaUser = (1:30)%(1:numel(muaCodes)/2); % it will not be considered if it's empty or commented out
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if exist('selectedCodesIndMuaUser', 'var') && ~isempty(selectedCodesIndMuaUser) 
@@ -364,7 +365,7 @@ close all
 %     selectedCodesIndMuaNew= [];
 % end  
 
-x = [sessionInfo.visStim; sessionInfo.visStim + 0.2]';
+x = [sessionInfo.visStim; sessionInfo.visStim + sessionInfo.visStimDuration]';
 for code = selectedCodesIndMua%(1:numel(muaCodes))%
     rMua.f = figure;                  
     bgMua = uibuttongroup('Visible','on',...
@@ -399,7 +400,7 @@ for code = selectedCodesIndMua%(1:numel(muaCodes))%
         if ~contains(conditionFieldnames{cond}, 'c0')
             yl = ylim;
             for i = 1:size(x,1)
-                rectangle('Position', [x(i,1) yl(1) 0.2 yl(2)-yl(1)], 'FaceColor',[0.85 0.85 0.85], 'EdgeColor', 'none');
+                rectangle('Position', [x(i,1) yl(1) sessionInfo.visStimDuration yl(2)-yl(1)], 'FaceColor',[0.85 0.85 0.85], 'EdgeColor', 'none');
             end
         end   
         if mod(cond,2)==0
@@ -517,7 +518,7 @@ statsCodesIndMua = (1:numel(muaCodes));
 statsMuaF
 
 %% Calculations on selected Muas
-
+disp('Calculations on selected Muas');
 selectedCodesIndMua = find(respMatMua ==1);
 selectedCodesMua = muaCodes(selectedCodesIndMua); % selected codes 
 selectedCodesDepthMua = spikeClusterData.uniqueCodesRealDepth(ismember(spikeClusterData.uniqueCodes(:,1), selectedCodesMua));
@@ -547,8 +548,8 @@ openvar('excel')
 
 %% Plot NEW figure - average figure
 
-meanTr = meanTrace;
-% meanTr = meanTraceMua;
+% meanTr = meanTrace;
+meanTr = meanTraceMua;
 
 figure
 subplot(2,1,1, 'align');
@@ -592,8 +593,8 @@ xlabel('Time [sec]');
 ylabel('Count');
 
 if saveFigs == true
-    savefig(strcat(savePathFigs, filesep, 'MeanAllCondTrace.fig'));
-%     savefig(strcat(savePathFigs, filesep, 'MeanAllCondTraceMua.fig'));
+%     savefig(strcat(savePathFigs, filesep, 'MeanAllCondTrace.fig'));
+    savefig(strcat(savePathFigs, filesep, 'MeanAllCondTraceMua.fig'));
 end
 
 %% plot NEW figures - noise codes

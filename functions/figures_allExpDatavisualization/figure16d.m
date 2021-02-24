@@ -12,11 +12,12 @@ if totalStim == 6
     for cond =1:totalConds % 1= non-photostimulated combined baselines; 2= non-photostimulated combined baselines
         figure;
         ax=axes;
-        for unit = 1:size(allStimBase,2)
+        baseSelect = allStimBase(cond,:,1) >= thresholdFreq ;
+        for unit = find(baseSelect)% 1:size(allStimBase,2)
             plot(allStimBase(cond, unit,1), allStimBase(cond, unit,4), 'LineStyle', 'none', 'Marker','o','MarkerSize',20,'Color', C_units(unit,:)); hold on
             text(allStimBase(cond, unit,1), allStimBase(cond, unit,4), num2str(unit) ,'FontSize',10, 'Color', C_units(unit,:), 'HorizontalAlignment','center');
         end
-        idx = isnan(allStimBase(cond, :,1)) | isnan(allStimBase(cond, :,4));
+        idx = isnan(allStimBase(cond, : ,1)) | isnan(allStimBase(cond, : ,4))| (~baseSelect);
         fitline4 = fit(squeeze(allStimBase(cond, ~idx,1))', squeeze(allStimBase(cond, ~idx,4))', 'poly1');
         plot(fitline4);
         coeffs4(cond,:) = coeffvalues(fitline4);

@@ -12,7 +12,8 @@ if totalStim == 6
     for cond =1:totalConds
         figure;
         ax=axes;
-        for unit = 1:size(allStimBase,2)
+        baseSelect = allStimBase(cond,:,1) >= thresholdFreq ;
+        for unit = find(baseSelect)%1:size(allStimBase,2)
             if classUnitsAll(unit) == 1
                 plot((1:2),[allStimBase(cond, unit,1), allStimBase(cond, unit,4)], 'LineStyle', '-', 'Marker','^','MarkerSize',20,'Color','g'); hold on
             elseif classUnitsAll(unit) == 2

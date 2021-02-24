@@ -43,11 +43,11 @@ for cond = (1:2:totalConds)
         y = max(meanNormAllStimBase(cond:cond+1,stim)+STEMnormAllStimBase(cond:cond+1,stim));
 %         text(stim, y+0.5*sign(y), num2str(p_temp),'FontSize',8, 'HorizontalAlignment','center');
         if p_temp <= 0.001
-            text(stim, y+0.1*sign(y),'***','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
+            text(stim, y+0.05,'***','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');%*sign(y)
         elseif p_temp <= 0.01
-            text(stim, y+0.1*sign(y),'**','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
+            text(stim, y+0.05,'**','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');%*sign(y)
         elseif p_temp <= 0.05
-            text(stim, y+0.1*sign(y),'*','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
+            text(stim, y+0.05,'*','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');%*sign(y)
         end
     end 
     yl=ylim;

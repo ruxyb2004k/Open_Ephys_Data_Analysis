@@ -36,15 +36,15 @@ if totalStim == 6
         end
     end  
 elseif totalStim == 1
-    plot((1:totalConds/2),meanNormAllStimAmpl100(1:2:end, :),'Marker','.','LineWidth', 3, 'Color', C(1,:)); hold on
-    plot((1:totalConds/2),meanNormAllStimAmpl100(2:2:end, :),'Marker','.','LineWidth', 3, 'Color', C(2,:)); hold on
+    plot((1:totalConds/2-1),meanNormAllStimAmpl100(1:2:end-2, :),'Marker','.','LineWidth', 3, 'Color', C(1,:)); hold on
+    plot((1:totalConds/2-1),meanNormAllStimAmpl100(2:2:end-2, :),'Marker','.','LineWidth', 3, 'Color', C(2,:)); hold on
     xlabel('Contrast');
-    xticks(1:totalConds/2);
-    xticklabels({'100%', '50%', '25%', '12%', '0'});
-    set(ax,'XLim',[0.8 totalConds/2+0.2],'FontSize',fs);
-    errorbar((1:totalConds/2),meanNormAllStimAmpl100(1:2:end, :),STEMnormAllStimAmpl100(1:2:end,:), 'Color', C(1,:)); hold on
-    errorbar((1:totalConds/2),meanNormAllStimAmpl100(2:2:end, :),STEMnormAllStimAmpl100(2:2:end,:), 'Color', C(2,:)); hold on
-    for cond = 1:2:totalConds
+    xticks(1:totalConds/2-1);
+    xticklabels({'100%', '50%', '25%', '12%'});
+    set(ax,'XLim',[0.8 totalConds/2-1+0.2],'FontSize',fs);
+    errorbar((1:totalConds/2-1),meanNormAllStimAmpl100(1:2:end-2, :),STEMnormAllStimAmpl100(1:2:end-2,:), 'Color', C(1,:)); hold on
+    errorbar((1:totalConds/2-1),meanNormAllStimAmpl100(2:2:end-2, :),STEMnormAllStimAmpl100(2:2:end-2,:), 'Color', C(2,:)); hold on
+    for cond = 1:2:totalConds-2
         p_temp =  pNormAllStimAmpl100((cond+1)/2);
         y = max(meanNormAllStimAmpl100(cond:cond+1)+STEMnormAllStimAmpl100(cond:cond+1));
         if p_temp <= 0.001

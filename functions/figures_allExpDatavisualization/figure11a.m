@@ -23,7 +23,7 @@ for stim = 2:numel(baseStim)
     figure
     ax = gca;
     hold on
-    b = bar((1:totalUnits),sortOIndexAllStimBaseComb(cond,:, stim));
+    b = bar((1:totalUnits),sortOIndexAllStimBaseComb(cond,:, stim), 'EdgeColor', 'none');
     b.FaceColor = 'flat';
     for unit = 1:totalBaseSelectUnits
         if classUnitsAll(indexOIndexAllStimBaseComb(cond,unit, stim)) == 1
@@ -49,9 +49,9 @@ for stim = 2:numel(baseStim)
     set(ax, 'TickDir', 'out');
     %     % set(ax,'xtick',[]);
     %     % set(gca, 'XColor', 'w');
-    set(ax,'FontSize',fs)
-    title(titleFig11a{stim-1},'FontSize',18);
+    set(ax,'FontSize',fs)    
     background = get(gcf, 'color');
+    title(titleFig11a{stim-1},'FontSize',18);
     if saveFigs == true
         savefig(strcat(savePath, saveFig11a{stim-1}));
     end

@@ -1,6 +1,6 @@
 %%% created by RB on 23.12.2020
 %%% analysis for allExpDataVisualization_A2.m
-
+disp('Running  analysis...')
 %% Analysis for Fig. 1 (2x): average of timecourses 
 
 % Smooth trace frequency timecourses (TCs)
@@ -27,8 +27,16 @@ end
 %% Analysis for Fig. 2 (2x): average of normalized time courses
 % Baseline calculations  % dim: cond, unit, stim 
 baseStim = clusterTimeSeriesAll.baseTime; % [12 27 42 57 72 87] or [6, 12, 26];
-baseDuration = 1/bin-1; % additional data points for baseline quantification
-
+baseDuration = 1/bin-1; % additional data points for baseline quantification (1 sec)
+if longBase
+    if isequal(baseStim, [12 27 42 57 72 87]) %
+        baseDuration = 3/bin-1; % additional data points for baseline quantification (3 sec)
+    elseif isequal(baseStim, [6, 12, 26])
+        baseStim = [1, 12, 21];% modify baseStim to allow longer baseline quantification time
+        baseDuration = 2/bin-1; % additional data points for baseline quantification (2 sec)
+    end
+end    
+       
 allStimBase = nan(totalConds, totalUnits, numel(baseStim));
 for cond = 1:totalConds
     for unit = find(iUnitsFilt)
@@ -83,9 +91,9 @@ end
 
 % normalize 0% vis stim to baseline (without photostim) and then smooth
 
-thresholdFreq = 0.1; % selection threshold in Hz
+% thresholdFreq = 0.1 % selection threshold in Hz
 baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; % select units with baseline higher than the selection threshold for 0%;
-totalBaseSelectUnits = numel(find(baseSelect));
+totalBaseSelectUnits = numel(find(baseSelect))
 for cond = totalConds-1:totalConds
     for unit = find(baseSelect)
         normTraceFreqAll(cond, unit, :) = smooth(clusterTimeSeriesAll.traceFreqGood(cond, unit, :)/allStimBase(totalConds-1, unit,1),smooth_param, smooth_method);
@@ -138,8 +146,11 @@ end
 normAllStimBase = nan(totalConds, totalUnits, totalStim);
 allStimBaseNormTrace = nan(totalConds, totalUnits, numel(baseStim));
 
+% thresholdFreq = 0.5 % selection threshold in Hz
+baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; % select units with baseline higher than the selection threshold for 0%;
+totalBaseSelectUnits = numel(find(baseSelect));
 for cond = 1:totalConds
-    for unit = find(iUnitsFilt)
+    for unit = find(baseSelect)
         for stim = 1:numel(baseStim)            
             if allStimBase(cond, unit, 1) ~=0
                 normAllStimBase(cond, unit, stim) = allStimBase(cond, unit, stim)/allStimBase(cond, unit, 1)-1;  
@@ -275,10 +286,10 @@ end
 % Calculate mean and STEM of normalized amplitude
 
 meanNormAllStimAmpl100 = squeeze(nanmean(normAllStimAmpl100,2));
-if totalStim == 1 % Correction for normalization: maybe it can also be applied to P7 ? 
-    meanNormAllStimAmpl100 = meanNormAllStimAmpl100 /meanNormAllStimAmpl100 (1);
-    normAllStimAmpl100 = normAllStimAmpl100 /meanNormAllStimAmpl100 (1);
-end
+% if totalStim == 1 % Correction for normalization: maybe it can also be applied to P7 ? 
+meanNormAllStimAmpl100 = meanNormAllStimAmpl100 /meanNormAllStimAmpl100(1);
+normAllStimAmpl100 = normAllStimAmpl100 /meanNormAllStimAmpl100(1);
+% end
     
     
 for cond = 1:totalConds 
@@ -433,7 +444,7 @@ allStimBaseComb = nan(2, totalUnits, numel(baseStim));
 allStimBaseComb(1,1:totalUnits,1:numel(baseStim)) = nanmean(allStimBase(1:2:totalConds,:,:),1); % no photostim
 allStimBaseComb(2,1:totalUnits,1:numel(baseStim)) = nanmean(allStimBase(2:2:totalConds,:,:),1); % with photostim
 
-thresholdFreq = 0.5; % selection threshold in Hz
+% thresholdFreq = 0.1; % selection threshold in Hz
 baseSelect = allStimBaseComb >= thresholdFreq ; % select units with baseline higher than the selection threshold; 2 conds, unit, 3 stim
 units = (1:totalUnits); 
 baseSelectUnits = units(baseSelect(2,:,1)); % 
@@ -561,7 +572,7 @@ if totalStim == 6
         end
     end
     
-    % Calculate mean and STEM of the ration of normalized amplitude
+    % Calculate mean and STEM of the ratio of normalized amplitude
     
     meanRatioNormAmplMinusBase = squeeze(nanmean(ratioNormAmplMinusBase,2));
     STEMratioNormAmplMinusBase = nan(totalConds/2, totalStim);
@@ -761,33 +772,35 @@ for cond = (1:2:totalConds-2)
 end
 
 %% Analysis Fig. 14b (1x)  - normalized amplitude-base to the first stim amplitude-base in 100% no photostim cond 
-
-% Normalized amplitude calculations : select first line or the next ones 
-normAmplMinusBase100 = allStimAmplNormTrace100 - squeeze(allStimBaseNormTrace100(:,:,3));
-
-%  for cond = 1:totalConds
-%     for unit = 1:totalUnits
-%         normAmplMinusBase100(cond, unit) = amplMinusBase(cond, unit)/amplMinusBase(1, unit);
-%     end
+% 
+% % Normalized amplitude calculations : select first line or the next ones 
+% normAmplMinusBase100 = allStimAmplNormTrace100 - squeeze(allStimBaseNormTrace100(:,:,3));
+% 
+% %  for cond = 1:totalConds
+% %     for unit = 1:totalUnits
+% %         normAmplMinusBase100(cond, unit) = amplMinusBase(cond, unit)/amplMinusBase(1, unit);
+% %     end
+% % end
+% 
+% % Calculate mean and STEM of normalized amplitude
+% 
+% meanNormAmplMinusBase100 = nanmean(normAmplMinusBase100,2);
+%     
+% for cond = 1:totalConds  
+%     STEMnormAmplMinusBase100(cond) = nanstd(normAmplMinusBase100(cond,:))/sqrt(sum(~isnan(normAmplMinusBase100(cond,:))));  
 % end
-
-% Calculate mean and STEM of normalized amplitude
-
-meanNormAmplMinusBase100 = nanmean(normAmplMinusBase100,2);
-    
-for cond = 1:totalConds  
-    STEMnormAmplMinusBase100(cond) = nanstd(normAmplMinusBase100(cond,:))/sqrt(sum(~isnan(normAmplMinusBase100(cond,:))));  
-end
-
-for cond = (1:2:totalConds)
-    [hNormAmplMinusBase100((cond+1)/2), pNormAmplMinusBase100((cond+1)/2)] =ttest(normAmplMinusBase100(cond,:),normAmplMinusBase100(cond+1,:)); % opt vs vis
-    [pNormAmplMinusBase100W((cond+1)/2), hNormAmplMinusBase100W((cond+1)/2)] =signrank(normAmplMinusBase100(cond,:),normAmplMinusBase100(cond+1,:)); %  opt vs vis
-end
+% 
+% for cond = (1:2:totalConds)
+%     [hNormAmplMinusBase100((cond+1)/2), pNormAmplMinusBase100((cond+1)/2)] =ttest(normAmplMinusBase100(cond,:),normAmplMinusBase100(cond+1,:)); % opt vs vis
+%     [pNormAmplMinusBase100W((cond+1)/2), hNormAmplMinusBase100W((cond+1)/2)] =signrank(normAmplMinusBase100(cond,:),normAmplMinusBase100(cond+1,:)); %  opt vs vis
+% end
 
 
 %% Analysis Fig16. base1 vs base2, combined - applicable for spont in protocol 7 and protocol 2 
 % 
 
+% baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; %%% under
+% construction
 allStimBaseComb(1,:,:) = nanmean(allStimBase(1:2:end, :, :), 1);
 allStimBaseComb(2,:,:) = nanmean(allStimBase(2:2:end, :, :), 1);
 
@@ -891,5 +904,7 @@ if totalStim == 1
 end
 
 
+
+%% Analysis for Fig. 22
 
 

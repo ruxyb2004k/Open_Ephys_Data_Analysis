@@ -47,5 +47,7 @@ for cond = (1:2:totalConds)
     shadedErrorBar1((plotBeg:bin:plotEnd),meanNormTraceFreqAll(cond+1,:),STEMnormTraceFreqAll(cond+1,:), {'Color', C(2,:)}); hold on
     if saveFigs == true
         savefig(strcat(savePath, saveFig2{(cond+1)/2}));
+        title('');
+        saveas(gcf, strcat(savePath, saveFig2{(cond+1)/2}(1:end-3), 'png'));
     end
 end

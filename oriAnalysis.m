@@ -24,10 +24,12 @@ savePathGood = fullfile(savePathFigs, 'good');
 saveFigs = false;
 %%
 % use amplByTrial % conds, codes, trials
-meanAmplByTrial = squeeze(nanmean(clusterTimeSeries.amplByTrial, 3));
-% meanAmplByTrial = squeeze(nanmean(amplByTrial, 3));
+% meanAmplByTrial = squeeze(nanmean(clusterTimeSeries.amplByTrial, 3));
+meanAmplByTrial = squeeze(nanmean(amplByTrial, 3));
+% % totalCodes = size(clusterTimeSeries.selectedCodes, 1);
+
 totalConds = size(meanAmplByTrial, 1); % all good codes
-% totalCodes = size(clusterTimeSeries.selectedCodes, 1);
+
 totalCodes = size(meanAmplByTrial, 2);
 m = ceil(sqrt(totalCodes));
 

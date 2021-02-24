@@ -9,13 +9,14 @@ filt = true(numFilt,size(expSet,2));
 
 %%%%%%% add filter here %%%%%%%
 
-filt(1,:) = [expSet.trialDuration] == 6;
-filt(2,:) = strcmp({expSet.animalStrain}, 'PvCre');
+filt(1,:) = [expSet.trialDuration] == 18;
+filt(2,:) = strcmp({expSet.animalStrain}, 'NexCre');
 % filt(3,:) = strcmp({expSet.experimentName}, '2020-08-11_15-44-59');
 % filt(4,:) = ~(contains({expSet.experimentName}, '2020-11-12_14-20-47') | contains({expSet.experimentName}, '2020-12-01_13-58-50') | contains({expSet.experimentName},'2020-12-03_14-41-44'));
 % filt(5,:) = contains({expSet.animalName}, '20200730') | contains({expSet.animalName}, '20200805');
-filt(6,:) = [repelem(0,71),repelem(1,37)];
-filt(7,:) = [expSet.expSel] == 1;
+% filt(6,1:71) = 0; % exclude experiments before 29.09.2020
+filt(7,:) = [expSet.expSel1] == 1; % first experiment selection
+filt(8,:) = [expSet.expSel2] == 1; % 2nd experiment selection
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -23,7 +24,14 @@ filt(7,:) = [expSet.expSel] == 1;
 combinedFilter = sum(filt,1) == numFilt;
 expSetFilt = expSet(combinedFilter); % apply filters to the experiment set
 
-%% Read each experiment
+%% Data loading
+% add real animal names
+for i =1:(size(expSetFilt,2))
+    expSetFilt(i).animalID = expSetFilt(i).animalName(1:end-4);
+end    
+expSetFilt = orderfields(expSetFilt,[1:3,9,4:8]); % reorder fields in structure
+
+% Read each experiment
 
 % create structures with experiment info for each unit
 fields = fieldnames(expSetFilt);
@@ -35,6 +43,8 @@ expSetFiltMua = cell2struct(c,fields); % no. rows = no. units
 for i =1:(size(expSetFilt,2))
     clearvars sessionInfo timeSeries spikeClusterData clusterTimeSeries cellMetrics
     
+    disp('');
+    disp(['Loading experiment ', num2str(i)]);
     experimentName = expSetFilt(i).experimentName
     sessionName = expSetFilt(i).sessionName;
     
@@ -84,17 +94,18 @@ expSetFiltSua(1) = []; % delete empty first row
 expSetFiltMua(1) = []; % delete empty first row
 
 % extract name and number of hemispheres
-hemNames = unique({expSetFilt.animalName});
-noHems = numel(hemNames);
+[hemNames,~,iHN] = unique({expSetFiltSua.animalName},'stable');
+suaEachHem = accumarray(iHN(:),1,[numel(hemNames),1]); % previously called animals
+noHems = numel(hemNames)
 
 % name and number of animals - equal or different than hemispheres
-animalNames = hemNames;
-noAnimals = noHems;
+% animalNames = hemNames;
+% noAnimals = numel(animalNames);
 
 % unique animal names
-[animNames,~,i] = unique({expSetFiltSua.animalName},'stable');
-suaEachAnimal = accumarray(i(:),1,[numel(animNames),1]); % previously called animals
-
+[animalID,~,iAN] = unique({expSetFiltSua.animalID},'stable');
+suaEachAnimal = accumarray(iAN(:),1,[numel(animalID),1]); % previously called animals
+noAnimals = numel(animalID)
 
 C = [[0 0 0]; [0 0 1]; [0 0.4470 0.7410]; [0.5 0.5 0.5]]; % black, navy-blue, blue, gray - traces
 % asign each animal a color
@@ -107,8 +118,11 @@ C_animal = [[0 0.4470 0.7410]; [0.8500 0.3250 0.0980]; [0.9290 0.6940 0.1250]; [
     [0 0.4470 0.7410]; [0.8500 0.3250 0.0980]; [0.9290 0.6940 0.1250]; [0.4940 0.1840 0.5560];...
     [0.4660 0.6740 0.1880]; [0.3010 0.7450 0.9330]; [1 0 1]; [1 0 0]; [0 1 0]; [1 1 0]; [0 0 1]; [0.5 0.5 0.5]]; % blue, orange, yellow, purple, green, cyan, magenta, red, green, diff yellow, diff blue, grey
 C_units = [];
-for animal = 1:noAnimals
-    C_units = [C_units; repmat(C_animal(animal,:),suaEachAnimal(animal),1)];
+% for i = 1:noAnimals
+%     C_units = [C_units; repmat(C_animal(i,:),suaEachAnimal(i),1)];
+% end
+for i = 1:noHems
+    C_units = [C_units; repmat(C_animal(i,:),suaEachHem(i),1)];
 end
 
 fs = 24; %font size
@@ -129,39 +143,42 @@ plotEnd = sessionInfoAll.trialDuration + sessionInfoAll.afterTrialTime;
 %% 
 %%%%%%%%%%% apply filters to the unit data set here %%%%%%%%%%%%%%%%
 
-iUnitsFilt = repelem(1, size(cellMetricsAll.waveformCodes,1)); % all units
+iUnitsFilt = repelem(true(1), size(cellMetricsAll.waveformCodes,1)); % all units
 iUnitsFilt = iUnitsFilt &  clusterTimeSeriesAll.iSelectedCodesInd == 1; % only selected = 1
 iUnitsFilt = iUnitsFilt & clusterTimeSeriesAll.iSelectedCodesIndSpont == 0 ; % only evoked = 0 or spont = 1
-% iUnitsFilt = iUnitsFilt &  classUnitsAll == 2; % only specifiy cell type: 1 = pyr, 2 = inh
+iUnitsFilt = iUnitsFilt &  classUnitsAll == 1; % only specifiy cell type: 1 = exc, 2 = inh
 
 saveFigs = false;
-savePath = [strjoin({path{1:end}, 'figs','2020-12', 'NexCre', 'long', 'spont'}, filesep), filesep];%, 'spont'
+savePath = [strjoin({path{1:end}, 'figs','2021-01_2', 'NexCre','long', 'evoked', 'exc'}, filesep), filesep];% 'NexCre', 'long', 'spont'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 totalUnits = size(iUnitsFilt,2);
 totalUnitsFilt = sum(iUnitsFilt);
 
-disp(['Total excitatory units: ', num2str(sum(classUnitsAll(iUnitsFilt) == 1))]);
-disp(['Total inhibitory units: ', num2str(sum(classUnitsAll(iUnitsFilt) == 2))]);
-
+disp(['Total units: ', num2str(totalUnitsFilt)]);
+disp(['Total excitatory units: ', num2str(sum(classUnitsAll(iUnitsFilt) == 1)), ' = ', num2str(sum(classUnitsAll(iUnitsFilt) == 1)/totalUnitsFilt*100), '%']);
+disp(['Total inhibitory units: ', num2str(sum(classUnitsAll(iUnitsFilt) == 2)), ' = ', num2str(sum(classUnitsAll(iUnitsFilt) == 2)/totalUnitsFilt*100), '%']);
 %% Analysis
 
-analysis_allExpDataVisualization % choose between 6a and 6b and possibly other analysis - under construction
+thresholdFreq = 0.5 % selection threshold in Hz - Figs 2, 4, 11-12
+longBase = 1 % choose between 1= long baseline(2 or 3 s) and 0 = short baseline (1 s)
+analysis_allExpDataVisualization % !!!choose between 6a and 6b and possibly other analysis - under construction; fix fig 14 b bug
 %% Plot figures
 
-figure1 % average of time courses evoked activity 100% contrast and spontaneous activity
-figure2 % Norm average of time courses evoked activity 100% contrast and spontaneous activity
+figure1 % ! average of time courses evoked activity 100% contrast and spontaneous activity
+figure2 % ! Norm average of time courses evoked activity 100% contrast and spontaneous activity
 figure3 % average baseline frequency 
-figure4 % Average normalized baseline 
+figure4 % ! Average normalized baseline 
 figure5a % average amplitude 
 figure5b % average amplitude: if totalStim == 1
 figure6a % average normalized amplitude: if totalStim == 1
-figure6b %  average normalized amplitude - all data in one graph in comparison to 6a
-figure7a % opto-index bar plot with p value for baselines (10x)
+figure6b % ! average normalized amplitude - all data in one graph in comparison to 6a
+figure7a % ! opto-index bar plot with p value for baselines (10x)
 figure7b % Opto-index indivdual data points with average and errorbars - comparison baselines between before and during photostim. 
 figure7d % Opto-index indivdual data points with average and errorbars - comparison baselines between before and during photostim. as 7b, but markers for each cell type
-figure9a % opto-index bar plot with p value for amplitudes
+figure7e % ! opto-index histocounts for baselines - cell types (10x)
+figure9a % ! opto-index bar plot with p value for amplitudes
 figure9b % Opto-index indivdual data points with average and errorbars - comparison evoked responses between before and during photostim. 
-figure11a % opto-index bar plot with p value for combined baselines (5x)
+figure11a % ! opto-index bar plot with p value for combined baselines (5x)
 figure11b % Opto-index indivdual data points with average and errorbars - comparison combined baselines between before and during photostim.: if totalStim == 1
 figure13a % average amplitude - baseline
 figure13c % average amplitude - baseline on normalized traces
@@ -173,12 +190,10 @@ figure16b % base2 vs base3 combined: if totalStim == 1
 figure16c % base1 vs base3 combined: if totalStim == 1
 figure16d % base1 vs base4: if totalStim == 6
 figure16e % base1 vs base4: if totalStim == 6
+figure16f % linear model, base1 vs base 3 
 figure17 % average combined baseline frequency: if totalStim == 1
-figure18 % Average normalized combined baseline if totalStim == 1
+figure18 % !Average normalized combined baseline if totalStim == 1
 figure19a % ampl1 vs ampl4: if totalStim == 6
 figure20 % average of time courses - combined contrasts (prev fig 19, short): if totalStim == 1
 figure21 % Norm combined traces to the combined baseline (prev fig 20, short): if totalStim == 1
-
-
-
 

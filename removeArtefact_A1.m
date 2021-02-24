@@ -1,7 +1,7 @@
 % remove false spikes resulting from photostimulation or trial onset
 % made by RB on 11.07.2019
 
-code = 2; % code to be modified
+code = 8; % code to be modified
 timeInterval = 10 + [0.0001 0.02];
 spikesToRemove = 1; % in each trial, in this time interval
 condsToModify = [2,4];%,6,8,10];%[1,2,4];

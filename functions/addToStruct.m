@@ -39,7 +39,21 @@ switch s % <; is 1>, <, is 2>
 %         dimCatFields.minCh = 2;
 %         dimCatFields.normMinCh = 2;
 %         dimCatFields.iMinCh = 2;
-%         dimCatFields.visitedCh = 2;        
+%         dimCatFields.visitedCh = 2;   
+        dimCatFields.putativeCellType = 1; % from here on it needs double checking
+        dimCatFields.putativeConnections.excitatory = 1;
+        dimCatFields.putativeConnections.inhibitory = 1;  
+        dimCatFields.fft_metrics.P1 = 2;
+        dimCatFields.fft_metrics.M = 1;
+        dimCatFields.fft_metrics.maxI = 1;
+        dimCatFields.fft_metrics.maxF = 1;
+        dimCatFields.fft_metrics.snrM = 1;
+        
+        fields = fieldnames(structExp.acg_metrics);
+        for fieldInd = 1:numel(fields)
+            field = char(fields(fieldInd));
+            dimCatFields.acg_metrics.(field) = 2;
+        end  
         
 end
 

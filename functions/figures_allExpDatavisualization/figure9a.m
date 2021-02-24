@@ -17,7 +17,7 @@ if totalStim ==6
         figure
         ax = gca;
         hold on
-        b = bar((1:totalUnits),sortOIndexAllStimAmpl((cond+1)/2,:,stim), 'EdgeColor', [0 0 0]);
+        b = bar((1:totalUnits),sortOIndexAllStimAmpl((cond+1)/2,:,stim), 'EdgeColor', 'none');
         b.FaceColor = 'flat';
         for unit = 1:totalUnitsFilt
             %         b.CData(unit,:) = C_units(indexOIndexAllStimAmpl((cond+1)/2,unit,stim),:);
@@ -44,9 +44,9 @@ if totalStim ==6
         set(ax, 'TickDir', 'out');
         %     % set(ax,'xtick',[]);
         %     % set(gca, 'XColor', 'w');
-        set(ax,'FontSize',fs)
-        title(titleFig9a{stim},'FontSize',18);
+        set(ax,'FontSize',fs)        
         background = get(gcf, 'color');
+        title(titleFig9a{stim},'FontSize',18);
         if saveFigs == true
             savefig(strcat(savePath, saveFig9a{stim}));
         end
@@ -64,7 +64,7 @@ elseif totalStim ==1
         figure
         ax = gca;
         hold on
-        b = bar((1:totalUnits),sortOIndexAllStimAmpl((cond+1)/2,:));
+        b = bar((1:totalUnits),sortOIndexAllStimAmpl((cond+1)/2,:), 'EdgeColor', 'none');
         b.FaceColor = 'flat';
         for unit = 1:totalUnits
             %         b.CData(unit,:) = C_units(indexOIndexAllStimAmpl((cond+1)/2,unit,stim),:);
@@ -96,6 +96,8 @@ elseif totalStim ==1
         background = get(gcf, 'color');
         if saveFigs == true
             savefig(strcat(savePath, saveFig9a{(cond+1)/2}));
+            title('');
+            saveas(gcf, strcat(savePath, saveFig9a{(cond+1)/2}(1:end-3), 'png'));
         end
     end
 end

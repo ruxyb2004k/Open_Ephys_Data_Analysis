@@ -1,10 +1,10 @@
 %%% Load matlab data from open ephys kwik files. 
 %%% modified 13.07.2020 by Ruxandra %%%
 
-% experimentName = '2020-09-30_12-45-52'
-% sessionName = 'V1_20200930_2'
+% experimentName = '2021-01-15_12-07-00'
+% sessionName = 'V1_20210115_1'
 
-clearvars -except experimentName sessionName a
+clearvars -except experimentName sessionName 
 %ks= get(gcf, 'UserData');ks.ops.fshigh = 300;ks.ops.Th = [10, 6];
 
 path = strsplit(pwd,filesep);
@@ -38,8 +38,8 @@ if ~SCDexist
     spikeClusterData.codes = double(readNPY(fullfile(basePathKilosort,'spike_clusters.npy'))); % all spike codes
     spikeClusterData.uniqueCodes(:,1) = unique(spikeClusterData.codes); % ordered list of all codes
     
-    spikeClusterData.channelPosition = double(readNPY(fullfile(basePathKilosort,'channel_positions.npy'))); % column 2 is the depth, where 0 is the tip of the electrode and all other channels have positive depths
-    spikeClusterData.channelShank = rez.ops.kcoords; 
+    spikeClusterData.channelPosition(rez.ops.chanMap, :) = double(readNPY(fullfile(basePathKilosort,'channel_positions.npy'))); % column 2 is the depth, where 0 is the tip of the electrode and all other channels have positive depths
+    spikeClusterData.channelShank(rez.ops.chanMap, :) = rez.ops.kcoords; 
     
     cl = []; % cluster labels 
     if exist(fullfile(basePathKilosort,'cluster_group.tsv'), 'file') % cluster labels after manual curation
@@ -52,7 +52,7 @@ if ~SCDexist
     clIdx = ismember(cc,spikeClusterData.uniqueCodes(:,1));
     spikeClusterData.uniqueCodesLabel = cl(clIdx)';
     
-    spikeClusterData.uniqueCodes(:,2) = 0; % intially, all clusters are considered to be on channel 0
+    spikeClusterData.uniqueCodes(:,2) = rez.ops.chanMap(1)-1; % intially, all clusters are considered to be on the first analyzed channel 0
     if exist(fullfile(basePathKilosort,'cluster_info.tsv'), 'file') % if the clusters were saved after inspecting them with phy this file should exist
         [~, ch] = readClusterInfoCSV(fullfile(basePathKilosort,'cluster_info.tsv')); % extract the channels for each cluster
         spikeClusterData.uniqueCodes(:,2) = ch'; 
@@ -118,7 +118,7 @@ if ~SCDexist
 end
 %%
 % modify when selecting different trials than already selected in load_command
-% spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis([2:end-1]);
+% spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis([1,3,4,7:end]);
 
 conditionFieldnames = fieldnames(sessionInfo.conditionNames); % extract conditionNames (c0visStim c100visStim etc)
 totalConds = numel(conditionFieldnames);
@@ -162,6 +162,7 @@ end
 spikeClusterData.spikeTimes = spikeTimes
 
 RefPerAndFalsePos_A1
+
 
 if numel(spikeClusterData.trialsForAnalysisSelected) ~= numel(timeSeries.trialsForAnalysis)
     warning('Are you sure some trials should be missing? Check spikeClusterData.trialsForAnalysisSelected on line 120 ');
