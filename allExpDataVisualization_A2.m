@@ -9,16 +9,16 @@ filt = true(numFilt,size(expSet,2));
 
 %%%%%%% add filter here %%%%%%%
 
-filt(1,:) = [expSet.trialDuration] == 18;
-filt(2,:) = strcmp({expSet.animalStrain}, 'NexCre');
+filt(1,:) = [expSet.trialDuration] == 7;
+filt(2,:) = strcmp({expSet.animalStrain}, 'PvCre');
 % filt(3,:) = strcmp({expSet.experimentName}, '2020-08-11_15-44-59');
 % filt(4,:) = ~(contains({expSet.experimentName}, '2020-11-12_14-20-47') | contains({expSet.experimentName}, '2020-12-01_13-58-50') | contains({expSet.experimentName},'2020-12-03_14-41-44'));
 % filt(5,:) = contains({expSet.animalName}, '20200730') | contains({expSet.animalName}, '20200805');
 % filt(6,1:137) = 0; % exclude experiments before 29.09.2020
-filt(7,:) = [expSet.expSel1] == 1; % first experiment selection
-filt(8,:) = [expSet.expSel2] == 1; % 2nd experiment selection
+% filt(7,:) = [expSet.expSel1] == 1; % first experiment selection
+% filt(8,:) = [expSet.expSel2] == 1; % 2nd experiment selection
 % filt(9,:) = 0;
-% filt(9, 140) = 1;
+% filt(9, 129:142) = 1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -42,7 +42,7 @@ expSetFiltMua = cell2struct(c,fields); % no. rows = no. units
 
 % import experiments from the experiment set list
 for i =1:(size(expSetFilt,2))
-    clearvars sessionInfo timeSeries spikeClusterData clusterTimeSeries cellMetrics
+    clearvars sessionInfo timeSeries spikeClusterData clusterTimeSeries cellMetrics orientationMetrics
     
     disp('');
     disp(['Loading experiment ', num2str(i)]);
@@ -55,9 +55,10 @@ for i =1:(size(expSetFilt,2))
     
     filenameSessionInfo = fullfile(basePathMatlab,[sessionName,'.sessionInfo.mat']); % general info about the session
 %     filenameTimeSeries = fullfile(basePathMatlab,[sessionName,'.timeSeries.mat']); % time series info
-    filenameSpikeClusterData = fullfile(basePathMatlab,[sessionName,'.spikeClusterData.mat']); % general info about the session
+    filenameSpikeClusterData = fullfile(basePathMatlab,[sessionName,'.spikeClusterData.mat']); % spike cluster data
     filenameClusterTimeSeries = fullfile(basePathMatlab,[sessionName,'.clusterTimeSeries.mat']); % cluster time series 
-    filenameCellMetrics = fullfile(basePathMatlab,[sessionName,'.cellMetrics.mat']); % spike cluster data
+    filenameCellMetrics = fullfile(basePathMatlab,[sessionName,'.cellMetrics.mat']); % cell emtrics
+    filenameOrientationMetrics = fullfile(basePathMatlab,[sessionName,'.orientationMetrics.mat']); % orientation metrics
     
     % try to load structures 
     [sessionInfo, SIexist] = tryLoad('sessionInfo', filenameSessionInfo);
@@ -65,6 +66,7 @@ for i =1:(size(expSetFilt,2))
     [spikeClusterData, SCDexist] = tryLoad('spikeClusterData', filenameSpikeClusterData);
     [clusterTimeSeries, CTSexist] = tryLoad('clusterTimeSeries', filenameClusterTimeSeries);
     [cellMetrics, CMexist] = tryLoad('cellMetrics', filenameCellMetrics);
+    [orientationMetrics, OMexist] = tryLoad('orientationMetrics', filenameOrientationMetrics);
     
     clusterTimeSeries = adjustStruct(clusterTimeSeries); % add 2 extra fields: iSelectedCodesInd and iSelectedCodesIndSpont   
     
@@ -83,11 +85,13 @@ for i =1:(size(expSetFilt,2))
         spikeClusterDataAll = spikeClusterData;
         cellMetricsAll = cellMetrics;
         clusterTimeSeriesAll = clusterTimeSeries; 
+        orientationMetricsAll = orientationMetrics;
     else
 %         sessionInfoAll = addToStruct(sessionInfo, sessionInfoAll);
         spikeClusterDataAll = addToStruct(spikeClusterData, spikeClusterDataAll);
         cellMetricsAll = addToStruct(cellMetrics, cellMetricsAll);       
         clusterTimeSeriesAll = addToStruct(clusterTimeSeries, clusterTimeSeriesAll); 
+        orientationMetricsAll = [orientationMetricsAll orientationMetrics];
     end    
     
 end
