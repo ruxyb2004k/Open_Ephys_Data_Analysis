@@ -5,8 +5,8 @@
 
 global i x1 y1 y2 y3 recStartDataPoint z z_filt1 z_filt2 samplingRate
 
-experimentName = '2021-02-23_14-34-55'
-sessionName = 'V1_20210223_1'
+experimentName = '2021-03-08_15-03-28'
+sessionName = 'V1_20210308_3'
 
 
 path = strsplit(pwd,filesep);
@@ -51,60 +51,60 @@ end
 %%
 %%%%%%% insert session-specific paramteres here %%%%%%%%%%
 
-recordingDepth = [-410 -340]'; % !!! Modify for each experiment !!!
+recordingDepth = [-480 -430]'; % !!! Modify for each experiment !!!
 channelNo = 32;
-probe = '2x16_E1';% '1x16_P1' '2x16_E1'
-animal.name = '20210215_LV1';
+probe = '2x16_P1';% '1x16_P1' '2x16_E1'
+animal.name = '20210304_LV1';
 animal.sex = 'm';
-animal.strain = 'Gad2Cre';
+animal.strain = 'PvCre';
 animal.virus = 'AAV9-mOp2A';
 recRegion = animal.name(end-2:end);%e.g., 'RV1', 'LV1';
 chOffset = 16; % 0 for 16-channel probes; 16 for 32-channel probe
 
 conditionNames= [];
-conditionNames.c100visStim = 2; % 
-conditionNames.c100optStim = 34; % 
+% conditionNames.c100visStim = 1; % 
+% conditionNames.c100optStim = 33; % 
 % conditionNames.c50visStim = 3;
 % conditionNames.c50optStim = 35;
 % conditionNames.c25visStim = 5; % 
 % conditionNames.c25optStim = 37; % 
 % conditionNames.c12visStim = 7; % 
 % conditionNames.c12optStim = 39; % 
-conditionNames.c0visStim = 0; 
-conditionNames.c0optStim = 32;
+% conditionNames.c0visStim = 0; 
+% conditionNames.c0optStim = 32;
 
-% conditionNames.or0visStim = 1;
-% conditionNames.or0optStim = 33;
-% conditionNames.or30visStim = 2;
-% conditionNames.or30optStim = 34;
-% conditionNames.or60visStim = 3;
-% conditionNames.or60optStim = 35;
-% conditionNames.or90visStim = 4;
-% conditionNames.or90optStim = 36;
-% conditionNames.or120visStim = 5;
-% conditionNames.or120optStim = 37;
-% conditionNames.or150visStim = 6;
-% conditionNames.or150optStim = 38;
-% conditionNames.or180visStim = 7;
-% conditionNames.or180optStim = 39;
-% conditionNames.or210visStim = 8;
-% conditionNames.or210optStim = 40;
-% conditionNames.or240visStim = 9;
-% conditionNames.or240optStim = 41;
-% conditionNames.or270visStim = 10;
-% conditionNames.or270optStim = 42;
-% conditionNames.or300visStim = 11;
-% conditionNames.or300optStim = 43;
-% conditionNames.or330visStim = 12;
-% conditionNames.or330optStim = 44;
+conditionNames.or0visStim = 1;
+conditionNames.or0optStim = 33;
+conditionNames.or30visStim = 2;
+conditionNames.or30optStim = 34;
+conditionNames.or60visStim = 3;
+conditionNames.or60optStim = 35;
+conditionNames.or90visStim = 4;
+conditionNames.or90optStim = 36;
+conditionNames.or120visStim = 5;
+conditionNames.or120optStim = 37;
+conditionNames.or150visStim = 6;
+conditionNames.or150optStim = 38;
+conditionNames.or180visStim = 7;
+conditionNames.or180optStim = 39;
+conditionNames.or210visStim = 8;
+conditionNames.or210optStim = 40;
+conditionNames.or240visStim = 9;
+conditionNames.or240optStim = 41;
+conditionNames.or270visStim = 10;
+conditionNames.or270optStim = 42;
+conditionNames.or300visStim = 11;
+conditionNames.or300optStim = 43;
+conditionNames.or330visStim = 12;
+conditionNames.or330optStim = 44;
 
 afterTrialTime = 0; % time after trial for display
 
-trialDuration = 18;% Long stimulation protocol (7)
-preTrialTime = 3; % time before 0 for display
-visStim = (0.2:3:15.2);
-optStimInterval = [2 10];
-visStimDuration = 0.2;
+% trialDuration = 18;% Long stimulation protocol (7)
+% preTrialTime = 3; % time before 0 for display
+% visStim = (0.2:3:15.2);
+% optStimInterval = [2 10];
+% visStimDuration = 0.2;
 
 % trialDuration = 9;% Contrast protocol (3)
 % preTrialTime = 2; % time before 0 for display
@@ -118,11 +118,11 @@ visStimDuration = 0.2;
 % optStimInterval = [0.2 5.2];
 % visStimDuration = 0.2;
 
-% trialDuration = 7;% Orientation protocol (1)
-% preTrialTime = 2; % time before 0 for display
-% visStim = (4);
-% optStimInterval = [0.2 6];%[2 10];%
-% visStimDuration = 1;
+trialDuration = 7;% Orientation protocol (1)
+preTrialTime = 2; % time before 0 for display
+visStim = (4);
+optStimInterval = [0.2 6];%[2 10];%
+visStimDuration = 1;
 
 
 %%%%%%%%% experiment-specific parameters end here %%%%%%%%%%
@@ -363,7 +363,7 @@ range2 = [];
 % leave it empty
 subTrialsForAnalysis = 1:numel(recStartDataPoint)-1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-exclude = []; %state here what trials you want to exclude
+exclude = [257]; %state here what trials you want to exclude
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subTrialsForAnalysis = countformepls(subTrialsForAnalysis,totalConds,exclude);
 

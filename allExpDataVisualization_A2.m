@@ -14,10 +14,11 @@ filt(2,:) = strcmp({expSet.animalStrain}, 'NexCre');
 % filt(3,:) = strcmp({expSet.experimentName}, '2020-08-11_15-44-59');
 % filt(4,:) = ~(contains({expSet.experimentName}, '2020-11-12_14-20-47') | contains({expSet.experimentName}, '2020-12-01_13-58-50') | contains({expSet.experimentName},'2020-12-03_14-41-44'));
 % filt(5,:) = contains({expSet.animalName}, '20200730') | contains({expSet.animalName}, '20200805');
-% filt(6,1:71) = 0; % exclude experiments before 29.09.2020
+% filt(6,1:137) = 0; % exclude experiments before 29.09.2020
 filt(7,:) = [expSet.expSel1] == 1; % first experiment selection
 filt(8,:) = [expSet.expSel2] == 1; % 2nd experiment selection
-
+% filt(9,:) = 0;
+% filt(9, 140) = 1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -107,7 +108,7 @@ noHems = numel(hemNames)
 suaEachAnimal = accumarray(iAN(:),1,[numel(animalID),1]); % previously called animals
 noAnimals = numel(animalID)
 
-C = [[0 0 0]; [0 0 1]; [0 0.4470 0.7410]; [0.5 0.5 0.5]]; % black, navy-blue, blue, gray - traces
+C = [[0 0 0]; [0 0 1];  [0.7 0.7 0.7]; [0 0.4470 0.7410]; [0 0 0]; [0.5 0.5 0.5]]; % black, navy-blue, grey, light blue, black, dark grey - traces
 % asign each animal a color
 C_animal = [[0 0.4470 0.7410]; [0.8500 0.3250 0.0980]; [0.9290 0.6940 0.1250]; [0.4940 0.1840 0.5560];...
     [0.4660 0.6740 0.1880]; [0.3010 0.7450 0.9330]; [1 0 1]; [1 0 0]; [0 1 0]; [1 1 0]; [0 0 1]; [0.5 0.5 0.5];...
@@ -148,8 +149,8 @@ iUnitsFilt = iUnitsFilt &  clusterTimeSeriesAll.iSelectedCodesInd == 1; % only s
 iUnitsFilt = iUnitsFilt & clusterTimeSeriesAll.iSelectedCodesIndSpont == 0 ; % only evoked = 0 or spont = 1
 iUnitsFilt = iUnitsFilt &  classUnitsAll == 1; % only specifiy cell type: 1 = exc, 2 = inh
 
-saveFigs = false;
-savePath = [strjoin({path{1:end}, 'figs','2021-01_2', 'NexCre','long', 'evoked', 'exc'}, filesep), filesep];% 'NexCre', 'long', 'spont'
+saveFigs = true;
+savePath = [strjoin({path{1:end}, 'figs','2021-03', 'NexCre','long', 'evoked', 'exc'}, filesep), filesep];% 'NexCre', 'long', 'spont'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 totalUnits = size(iUnitsFilt,2);
 totalUnitsFilt = sum(iUnitsFilt);
@@ -160,7 +161,7 @@ disp(['Total inhibitory units: ', num2str(sum(classUnitsAll(iUnitsFilt) == 2)), 
 %% Analysis
 
 thresholdFreq = 0.5 % selection threshold in Hz - Figs 2, 4, 11-12
-longBase = 1 % choose between 1= long baseline(2 or 3 s) and 0 = short baseline (1 s)
+longBase = 0 % choose between 1= long baseline(2 or 3 s) and 0 = short baseline (1 s)
 analysis_allExpDataVisualization % !!!choose between 6a and 6b and possibly other analysis - under construction; fix fig 14 b bug
 %% Plot figures
 
@@ -196,4 +197,9 @@ figure18 % !Average normalized combined baseline if totalStim == 1
 figure19a % ampl1 vs ampl4: if totalStim == 6
 figure20 % average of time courses - combined contrasts (prev fig 19, short): if totalStim == 1
 figure21 % Norm combined traces to the combined baseline (prev fig 20, short): if totalStim == 1
-
+figure22 % traces of visual evoked - sponateneous activity
+figure23 % normalized traces of visual evoked - sponateneous activity
+figure25a % reproduction of fig 5a from eLife 2020 (average of baseline-subtracted and norm traces)
+figure25b % reproduction of fig 5bi from eLife 2020 (average amplitude of normalized and baseline subtr traces)
+figure25c % reproduction of fig 5bii from eLife 2020 (average baseline of normalized and baseline subtr traces)
+figure25d % reproduction of fig 5biii from eLife 2020 (average magnitude of normalized and baseline subtr traces)

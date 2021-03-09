@@ -97,7 +97,7 @@ iMinCh = nan(channelNo, numel(codes));
 waveformCodeChannelNew = nan(1,numel(codes));
 waveformFiltAvgCh = nan(numel(codes),dataPointsWindow+1,channelNo);
 shiftCodes = [];
-% shiftCodes = [27];
+% shiftCodes = [18];
 
 for ind = (1:numel(codes)) % for each selected code
     waveformCode = codes(ind); 

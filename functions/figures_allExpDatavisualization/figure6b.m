@@ -57,18 +57,18 @@ elseif totalStim == 1
     end  
     
 end
-    max_hist1 = max(max(meanNormAllStimAmpl100))*1.2;
-    
-    ylabel('Normalized amplitude');
-    
-    set(ax, 'TickDir', 'out');
-%     set(ax,'YLim',[-0.2 max_hist1]);
-    set(ax,'FontSize',fs)
-    set(ax,'FontSize',fs)
-    title(titleFig6b,'FontSize',18);
-    background = get(gcf, 'color');
+max_hist1 = max(max(meanNormAllStimAmpl100))*1.2;
 
-     
+ylabel('Normalized amplitude');
+
+set(ax, 'TickDir', 'out');
+%     set(ax,'YLim',[-0.2 max_hist1]);
+set(ax,'FontSize',fs)
+set(ax,'FontSize',fs)
+title(titleFig6b,'FontSize',18);
+background = get(gcf, 'color');
+
+
 if saveFigs == true
     savefig(strcat(savePath, saveFig6b{1}));
     title('');

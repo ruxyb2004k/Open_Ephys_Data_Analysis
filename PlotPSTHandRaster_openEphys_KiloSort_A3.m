@@ -336,7 +336,7 @@ save(filenameClusterTimeSeries, 'clusterTimeSeries')
 
 
 %%%%%%%%% change parameters here %%%%%%%%%
-selectedCodesIndMuaUser = (1:30)%(1:numel(muaCodes)/2); % it will not be considered if it's empty or commented out
+% selectedCodesIndMuaUser = (31:60)%(1:numel(muaCodes)/2); % it will not be considered if it's empty or commented out
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if exist('selectedCodesIndMuaUser', 'var') && ~isempty(selectedCodesIndMuaUser) 

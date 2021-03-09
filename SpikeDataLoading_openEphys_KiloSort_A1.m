@@ -118,7 +118,7 @@ if ~SCDexist
 end
 %%
 % modify when selecting different trials than already selected in load_command
-% spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis([1,3,4,7:end]);
+% spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis([1:9,11:end]);
 
 conditionFieldnames = fieldnames(sessionInfo.conditionNames); % extract conditionNames (c0visStim c100visStim etc)
 totalConds = numel(conditionFieldnames);
