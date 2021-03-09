@@ -10,12 +10,17 @@ basePathMatlab = strjoin({basePath, 'matlab analysis'}, filesep);
 filenameSpikeClusterData = fullfile(basePathMatlab,[sessionName,'.spikeClusterData.mat']); % spike cluster data
 filenameClusterTimeSeries = fullfile(basePathMatlab,[sessionName,'.clusterTimeSeries.mat']); % cluster time series 
 filenameCellMetrics = fullfile(basePathMatlab,[sessionName,'.cellMetrics.mat']); % spike cluster data
+filenameOrientationMetrics = fullfile(basePathMatlab,[sessionName,'.orientationMetrics.mat']); % general info about the session
 
 % try to load structures if they don't already exist in the workspace
 [spikeClusterData, SCDexist] = tryLoad('spikeClusterData', filenameSpikeClusterData);
 [clusterTimeSeries, CTSexist] = tryLoad('clusterTimeSeries', filenameClusterTimeSeries);
 [cellMetrics, CMexist] = tryLoad('cellMetrics', filenameCellMetrics);
+[orientationMetrics, OMexist] = tryLoad('orientationMetrics', filenameOrientationMetrics);
 
+if OMexist
+    allFitData = orientationMetrics;
+end
 
 savePath = basePathMatlab;
 savePathFigs = fullfile(basePathMatlab, 'figs');
@@ -332,7 +337,22 @@ for code = 1:totalCodes
     text(PrefOri_All(code,1)-offset,PrefOri_All(code,2),num2str(code),'FontSize', 8);
 end
 
+%%
+orientationMetrics = allFitData;
 
+% Save the metadata structures
+if exist(filenameOrientationMetrics,'file')
+    warning('.orientationMetrics.mat file already exists.')
+else
+     cfOM = checkFields(orientationMetrics);
+     if ~cfOM         
+         disp(['Saving ', experimentName, ' / ' , sessionName, ' .orientationMetrics.mat file'])
+         save(filenameOrientationMetrics, 'orientationMetrics')
+     end   
+end    
+
+
+%%
 % %% Doesn't work anymore
 % figure
 % for code = 1: totalCodes

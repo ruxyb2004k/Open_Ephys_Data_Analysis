@@ -36,6 +36,10 @@ switch s
             'waveformCodeChannelNew', 'polarity', 'derivative_TroughtoPeak', 'peakA', 'peakB', 'trough',...
             'acg_metrics', 'putativeCellType', 'mono_res', 'putativeConnections','fft_metrics'}; % last two rows not yet implemented for Klusta
          
+    case 'orientationMetrics'
+        fields = {'NormForGauss', 'Max', 'Max180', 'MaxY', 'f1', 'f2', 'f1cfit', 'f2cfit', 'xDataDegrees', 'circVarf1',...
+            'circVarf2', 'Maxf1', 'Maxf2', 'yf1', 'yf2', 'fitErrorf1', 'fitErrorf2', 'fitErrorOkay', 'snrf1', 'snrf2',...
+            'PopulationSummary', 'TuningWidth', 'DirectionSelectivity', 'PreferredOrientation'};
 end    
 
 for f = 1:numel(fields)
