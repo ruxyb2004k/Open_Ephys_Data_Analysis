@@ -39,7 +39,7 @@ switch s
     case 'orientationMetrics'
         fields = {'NormForGauss', 'Max', 'Max180', 'MaxY', 'f1', 'f2', 'f1cfit', 'f2cfit', 'xDataDegrees', 'circVarf1',...
             'circVarf2', 'Maxf1', 'Maxf2', 'yf1', 'yf2', 'fitErrorf1', 'fitErrorf2', 'fitErrorOkay', 'snrf1', 'snrf2',...
-            'PopulationSummary', 'TuningWidth', 'DirectionSelectivity', 'PreferredOrientation'};
+            'TuningWidth', 'DirectionSelectivity', 'PreferredOrientation'};
 end    
 
 for f = 1:numel(fields)
