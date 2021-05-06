@@ -12,21 +12,6 @@ histoBin = 0.0005; % in sec
 ref_per = 0.002; % refractory period
 cens_per = 0.0005;% censored period
 
-% uncomment the next lines only if this script is run separately from another script (like SpikeDataLoading)
-% path = strsplit(pwd,filesep);
-% basePath = strjoin({path{1:end-1}, 'Open Ephys Data', experimentName}, filesep);
-% basePathData = strjoin({basePath, 'data'}, filesep);
-% basePathKlusta = strjoin({basePath, 'klusta analysis'}, filesep);
-% basePathMatlab = strjoin({basePath, 'matlab analysis'}, filesep);
-% 
-% filenameSessionInfo = fullfile(basePathMatlab,[sessionName,'.sessionInfo.mat']); % general info about the session
-% filenameTimeSeries = fullfile(basePathMatlab,[sessionName,'.timeSeries.mat']); % time series info
-% filenameSpikeClusterData = fullfile(basePathMatlab,[sessionName,'.spikeClusterData.mat']); % spike cluster data
-% 
-% [sessionInfo, SIexist] = tryLoad('sessionInfo', filenameSessionInfo);
-% [timeSeries, TSexist] = tryLoad('timeSeries', filenameTimeSeries);
-% [spikeClusterData, SCDexist] = tryLoad('spikeClusterData', filenameSpikeClusterData);
-
 totalConds = numel(fieldnames(sessionInfo.conditionNames));
 
 totalCodes = size(spikeClusterData.uniqueCodes,1);
@@ -125,9 +110,3 @@ disp(['Possible SUAs: ', num2str(spikeClusterData.uniqueCodes(refrPeriodRatio<=0
 spikeClusterData.refrPeriodRatio = refrPeriodRatio;
 spikeClusterData.presence = presence;
 spikeClusterData.falsePos = falsePos;
-
-%%
-
-% save(filenameSpikeClusterData, 'spikeClusterData')
-% disp(['Saving ', experimentName, ' / ' , sessionName, ' .spikeClusterData.mat file'])
-% end    

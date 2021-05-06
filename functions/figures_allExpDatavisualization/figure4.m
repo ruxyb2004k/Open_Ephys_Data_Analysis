@@ -26,7 +26,7 @@ for cond = (1:2:totalConds)
 %     min_hist = -1;
     max_hist1 = 1.5;
     xlabel('Stim#');
-    ylabel('Normalized baseline ');
+    ylabel('Norm. baseline ');
     set(ax,'XLim',[0.8 numel(baseStim)+0.2],'FontSize',fs);
     set(ax,'xtick',[1:1:numel(baseStim)]) % set major ticks
     set(ax, 'TickDir', 'out');

@@ -3,7 +3,7 @@
 % Fig. 18 : Average normalized combined baseline 
 
 if totalStim == 1
-    titleFig18 = {'Normalized combined baselineno photostim. vs with photostim.'};
+    titleFig18 = {'Normalized combined baseline no photostim. vs with photostim.'};
     
     saveFig18 = {'meanNormBaselineComb.fig'};
     

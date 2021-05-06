@@ -15,17 +15,17 @@ switch s % <; is 1>, <, is 2>
 
         dimCatFields.iSelectedCodesInd = 2;
         dimCatFields.iSelectedCodesIndSpont = 2;
-        % comment out when only looking at fig 15
-        dimCatFields.traceFreqGood = 2;
-        dimCatFields.traceFreqGoodSel = 2;
-        dimCatFields.statsSua.pSua = 2;
-        dimCatFields.statsSua.pSuaW = 2;
-        dimCatFields.statsSua.pSuaBase = 2;
-        dimCatFields.statsSua.pSuaBaseW = 2;
-        dimCatFields.statsSua.pSuaBaseSameCond = 2;
-        dimCatFields.statsSua.pSuaBaseSameCondW = 2;
-        dimCatFields.statsSua.pSuaBaseComb = 1;
-        dimCatFields.statsSua.pSuaBaseCombW = 1;
+        % comment out the next 10 lines when only looking at fig 15
+%         dimCatFields.traceFreqGood = 2;
+%         dimCatFields.traceFreqGoodSel = 2;
+%         dimCatFields.statsSua.pSua = 2;
+%         dimCatFields.statsSua.pSuaW = 2;
+%         dimCatFields.statsSua.pSuaBase = 2;
+%         dimCatFields.statsSua.pSuaBaseW = 2;
+%         dimCatFields.statsSua.pSuaBaseSameCond = 2;
+%         dimCatFields.statsSua.pSuaBaseSameCondW = 2;
+%         dimCatFields.statsSua.pSuaBaseComb = 1;
+%         dimCatFields.statsSua.pSuaBaseCombW = 1;
         
     case 'cellMetrics'        
 %         dimCatFields.waveformDataFilt = 2;

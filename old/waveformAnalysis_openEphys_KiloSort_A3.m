@@ -97,7 +97,7 @@ iMinCh = nan(channelNo, numel(codes));
 waveformCodeChannelNew = nan(1,numel(codes));
 waveformFiltAvgCh = nan(numel(codes),dataPointsWindow+1,channelNo);
 shiftCodes = [];
-% shiftCodes = [18];
+shiftCodes = [28, 60];
 
 for ind = (1:numel(codes)) % for each selected code
     waveformCode = codes(ind); 
@@ -144,6 +144,7 @@ for ind = (1:numel(codes)) % for each selected code
     % cellMetrics.waveformData{ind} = waveformData;
     cellMetrics.waveformDataFilt{ind} = waveformDataFilt;
 end
+clearvars dataFilt
 
 % Waveform feature calculations
 waveforms.timeWaveform{1} = timeWaveform;
@@ -212,6 +213,7 @@ cellMetrics.waveformCodeChannelNew = waveformCodeChannelNew ;
 clearvars data data_ch datasub timestamps timeSeries waveformDataPoints waveformTimes
 %%
 %calculate ACG fit, putative cell type and putative connections
+close all
 spikes.numcells = numel(spikeClusterData.goodCodes);
 for i = 1: spikes.numcells
     clusterCode = spikeClusterData.goodCodes(i);
@@ -270,6 +272,8 @@ cellMetrics.mono_res = mono_res;
 cellMetrics.putativeConnections = putativeConnections;
 cellMetrics.fft_metrics = fft_metrics;
 
+spikeClusterData.goodCodes(cellMetrics.mono_res.sig_con_excitatory_all)
+spikeClusterData.goodCodes(cellMetrics.mono_res.sig_con_inhibitory_all)
 spikeClusterData.goodCodes(cellMetrics.putativeConnections.excitatory)
 spikeClusterData.goodCodes(cellMetrics.putativeConnections.inhibitory)
 %% plot more figures all waveforms
@@ -351,6 +355,15 @@ xlabel('trough to peak (ms)');
 ylabel('peak asymmetry (P2-P1)/(P2+P1)') ;
 saveas(gcf, strcat(savePathFigs, filesep, 'troughPeakTimeVsPeakAsymConnections.fig'));
 
+%% modify if needed
+% [mono_res, putativeConnections] = removeConnections([], 'exc', mono_res, putativeConnections)
+% [mono_res, putativeConnections] = removeConnections([], 'inh', mono_res, putativeConnections)
+
+cellMetrics.mono_res = mono_res;
+cellMetrics.putativeConnections = putativeConnections;
+
+spikeClusterData.goodCodes(cellMetrics.putativeConnections.excitatory)
+spikeClusterData.goodCodes(cellMetrics.putativeConnections.inhibitory)
 %% save waveform characteristics
 
 close all
@@ -362,9 +375,13 @@ cellMetrics.iMinCh = iMinCh;
 cellMetrics.visitedCh = visitedCh;
 
 % if file too large:
-% cellMetrics.waveformDataFilt = [];
+s = whos('cellMetrics');
+if s.bytes >= 3*10^9
+    cellMetrics.waveformDataFilt = [];
+    warning('waveformDataFilt was emptied')
+end    
 
-cellMetrics
+% cellMetrics
 cfCM = checkFields(cellMetrics);
 if ~cfCM         
     disp(['Saving ', experimentName, ' / ' , sessionName, ' .cellMetrics.mat file'])

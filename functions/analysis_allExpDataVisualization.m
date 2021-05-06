@@ -1,6 +1,16 @@
 %%% created by RB on 23.12.2020
 %%% analysis for allExpDataVisualization_A2.m
 disp('Running  analysis...')
+if sessionInfoAll.trialDuration == 18
+    C = [[0 0 0]; [0 0 1];  [0.7 0.7 0.7]; [0 0.4470 0.7410]; [0 0 0]; [0.5 0.5 0.5]]; % black, navy-blue, grey, light blue, black, dark grey - traces
+elseif sessionInfoAll.trialDuration == 6 || sessionInfoAll.trialDuration == 9 
+    C = [repmat([0 0 0; 0 0 1],4,1); [0.7 0.7 0.7]; [0 0.4470 0.7410]; repmat([0 0 0; 0.5 0.5 0.5], 4,1)]; % (black, navy-blue)*4, grey, light blue, (black, dark grey)*4 - traces
+
+    for i= 1:(totalConds/2-1)
+        contrasts(i)= floor(100/2^(i-1));
+    end
+    contrasts0 = [contrasts, 0];
+end
 %% Analysis for Fig. 1 (2x): average of timecourses 
 
 % Smooth trace frequency timecourses (TCs)
@@ -34,6 +44,9 @@ if longBase
     elseif isequal(baseStim, [6, 12, 26])
         baseStim = [1, 12, 21];% modify baseStim to allow longer baseline quantification time
         baseDuration = 2/bin-1; % additional data points for baseline quantification (2 sec)
+    elseif isequal(baseStim, [6, 12, 41])
+        baseStim = [1, 12, 36];% modify baseStim to allow longer baseline quantification time
+        baseDuration = 2/bin-1; % additional data points for baseline quantification (2 sec)
     end
 end    
        
@@ -60,6 +73,8 @@ if sessionInfoAll.trialDuration == 18
     searchMax = [17:19]; % in data points
 elseif sessionInfoAll.trialDuration == 6
     searchMax = [31:33];
+elseif sessionInfoAll.trialDuration == 9
+    searchMax = [46:48];
 end
 
 
@@ -191,6 +206,8 @@ if sessionInfoAll.trialDuration == 18
     amplInt = [18 18]; % in data points
 elseif sessionInfoAll.trialDuration == 6
     amplInt = [31 33];
+elseif sessionInfoAll.trialDuration == 9
+    amplInt = [46 48];
 end
 
 allStimAmpl = nan(totalConds, totalUnits, totalStim);
@@ -672,30 +689,6 @@ if totalStim == 6
         end
     end
     
-    % only for single-stim protocol
-    if totalStim == 1
-        ratioNormAmplMinusBaseNormTrace = ratioAmplMinusBaseNormTrace;
-    else % for multi-stim protocol, divide by first stim
-        ratioNormAmplMinusBaseNormTrace = ratioAmplMinusBaseNormTrace ./ ratioAmplMinusBaseNormTrace(:,:,1);
-    end
-    
-    meanOIndexAmplMinusBaseNormTrace = nanmean(OIndexAmplMinusBaseNormTrace,2);
-    STEMOIndexAmplMinusBaseNormTrace = nan(totalConds/2,totalStim);
-    for cond = 1:totalConds/2
-        for stim = 1:totalStim
-            STEMOIndexAmplMinusBaseNormTrace(cond, stim) = nanstd(OIndexAmplMinusBaseNormTrace(cond,:,stim))/sqrt(sum(~isnan(OIndexAmplMinusBaseNormTrace(cond,:,stim))));
-        end
-    end
-    
-    % Calculate mean and STEM of the ration of normalized amplitude
-    
-    meanRatioNormAmplMinusBaseNormTrace = squeeze(nanmean(ratioNormAmplMinusBaseNormTrace,2));
-    STEMratioNormAmplMinusBaseNormTrace = nan(totalConds/2, totalStim);
-    for cond = 1:2:totalConds
-        for stim = 1:totalStim
-            STEMratioNormAmplMinusBaseNormTrace((cond+1)/2,stim) = nanstd(ratioNormAmplMinusBaseNormTrace((cond+1)/2,:,stim))/sqrt(sum(~isnan(ratioNormAmplMinusBaseNormTrace((cond+1)/2,:,stim))));
-        end
-    end
 elseif totalStim == 1
     amplMinusBaseNormTrace = allStimAmplNormTrace - squeeze(allStimBaseNormTrace(:,:,3));
     
@@ -910,7 +903,7 @@ end
 allStimMagn = allStimAmpl-allStimBase;
 
 baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; 
-magnCondDiff = nan(totalConds/2, totalUnits, totalDatapoints);
+magnCondDiff = nan(totalConds-2, totalUnits, totalDatapoints);
 for cond = 1:totalConds-2
     for unit = find(iUnitsFilt & baseSelect)
         % subtract S from V or Sph from Vph
@@ -936,6 +929,8 @@ if sessionInfoAll.trialDuration == 18
     searchMax = [17:19]; % in data points
 elseif sessionInfoAll.trialDuration == 6
     searchMax = [31:33];
+elseif sessionInfoAll.trialDuration == 9
+    searchMax = [46:48];
 end
 
 maxMagnCondDiff = nan(totalConds-2, totalUnits);
@@ -1009,9 +1004,11 @@ end
 
 % calculare max in each timecourse of each cell, for conds with evoked activity
 if sessionInfoAll.trialDuration == 18
-    amplInt = [18 18]; % in data points
+    amplInt = [17 19]; % in data points 
 elseif sessionInfoAll.trialDuration == 6
     amplInt = [31 33];
+elseif sessionInfoAll.trialDuration == 9
+    amplInt = [46 48];
 end
 
 allStimAmplMagnCondDiff = nan(totalConds-2, totalUnits, totalStim);
@@ -1070,6 +1067,13 @@ end
 
 
 %% analysis for Fig 25a - reproduction of fig 5a from eLife 2020 (average of baseline-subtracted and norm traces )
+% analysis for Fig 26a - reproduction of fig 8a from eLife 2020 (average of baseline-subtracted and norm traces )
+% analysis for Fig 26b - reproduction of fig 8c from eLife 2020 (average of baseline-subtracted and norm traces )
+
+% approach: subtr Sph from Vph, subtr baseline, normalize to max in first cond
+% this approach is the same as subtr baseline, normalize to max in first cond, subtr Sph from Vph
+% all fine with figs 25a, 26a, but is 26b the same no mather the approach?
+% Most likely yes
 
 allStimMagnMagnCondDiff = allStimAmplMagnCondDiff-allStimBaseMagnCondDiff;
 
@@ -1080,7 +1084,7 @@ baseDuration = 1/bin-1; % additional data points for baseline quantification (1 
        
 allStimBaseTraces = nan(2*totalConds-2, totalUnits, numel(baseStim));
 for cond = 1:2*totalConds-2
-    for unit = find(iUnitsFilt)
+    for unit = find(iUnitsFilt & baseSelect)
         for stim = 1:numel(baseStim)
             allStimBaseTraces(cond, unit, stim) = nanmean(traces(cond, unit, baseStim(stim):baseStim(stim)+baseDuration),3);
         end
@@ -1094,14 +1098,16 @@ for cond = 1:2*totalConds-2
     end
 end    
 
-baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; 
+% baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; 
 % meanTraces = nanmean(traces(:,iUnitsFilt & baseSelect,:),2);
 
 % calculate max in each timecourse of each cell, for conds with evoked activity
 if sessionInfoAll.trialDuration == 18
     searchMax = [17:19]; % in data points
 elseif sessionInfoAll.trialDuration == 6
-    searchMax = [31:33];
+    searchMax = [31:33]; %[31:33]
+elseif sessionInfoAll.trialDuration == 9
+    searchMax = [46:48]; %[31:33]
 end
 
 maxTracesBaseSubtr = nan(2*totalConds-2, totalUnits);
@@ -1112,68 +1118,109 @@ for cond = 1: 2*totalConds-2
     for unit = find(iUnitsFilt)% & baseSelect)
         [maxTracesBaseSubtr(cond, unit), maxIndTracesBaseSubtr(cond, unit)] = max(tracesBaseSubtr(cond, unit, searchMax));
         maxIndTracesBaseSubtr(cond, unit) = maxIndTracesBaseSubtr(cond, unit) + searchMax(1)-1;
-        smoothMaxTracesBaseSubtr(cond, unit) = mean(tracesBaseSubtr(cond, unit, maxIndTracesBaseSubtr(cond, unit))); % just max
+%         smoothMaxTracesBaseSubtr(cond, unit) = mean(tracesBaseSubtr(cond, unit, maxIndTracesBaseSubtr(1, unit))); % just max, 1st condition
+         smoothMaxTracesBaseSubtr(cond, unit) = mean(tracesBaseSubtr(cond, unit, searchMax)); % mean across interval
+
     end
 end
 
-% normTracesBaseSubtr = nan(2*totalConds-2, totalUnits, totalDatapoints);
-normTracesBaseSubtr100 = nan(2*totalConds-2, totalUnits, totalDatapoints);
+normTracesBaseSubtr = nan(2*totalConds-2, totalUnits, totalDatapoints); % normalized traces to 100 % max in the same group
+normTracesBaseSubtr100 = nan(2*totalConds-2, totalUnits, totalDatapoints); % normalized traces to 100 % max in the control group (V)
 
+condNorms = [repmat([1,2], 1, totalConds/2), repmat([totalConds+1,totalConds+2], 1, totalConds/2-1)];
 for cond = 1:2*totalConds-2
-%     condNorm = floor((cond+1)/2)*2-1; % normalize by the non-photostim condition
+    condNorm = condNorms(cond);
     for unit = find(iUnitsFilt & baseSelect)       
         % normalize by the non-photostim condition - needs checking for V-S
         % and Vph - Sph
-%         normTracesBaseSubtr(cond, unit, :) = smooth(tracesBaseSubtr(cond, unit, :)/smoothMaxTracesBaseSubtr(condNorm, unit),smooth_param, smooth_method);
+        normTracesBaseSubtr(cond, unit, :) = smooth(tracesBaseSubtr(cond, unit, :)/smoothMaxTracesBaseSubtr(condNorm, unit),smooth_param, smooth_method);
         % normalize by the 100% non-photostim condition
         normTracesBaseSubtr100(cond, unit, :) = smooth(tracesBaseSubtr(cond, unit, :)/smoothMaxTracesBaseSubtr(1, unit),smooth_param, smooth_method);
     end
 end
 
 % Calculate mean of smoothed trace frequency TCs
+meanNormTracesBaseSubtr = squeeze(nanmean(normTracesBaseSubtr,2));
 meanNormTracesBaseSubtr100 = squeeze(nanmean(normTracesBaseSubtr100,2));
+
+%%%%%%% this passage needs further consideration %%%%%%%%
+% adjust by a certain factor in order to have a peak at 1 and not the avg of several data points
+% comment out if needed
+
+normTracesBaseSubtrAdj = nan(2*totalConds-2, totalUnits, totalDatapoints); % normalized traces to 100 % max in the same group
+for cond = 1:2*totalConds-2
+    condNorm = condNorms(cond);
+    for unit = find(iUnitsFilt & baseSelect)  
+        normTracesBaseSubtrAdj(cond, unit, :) =  normTracesBaseSubtr(cond, unit, :) / max(meanNormTracesBaseSubtr(condNorm,searchMax));
+    end
+end
+normTracesBaseSubtr100Adj =  normTracesBaseSubtr100 / max(meanNormTracesBaseSubtr100(1,searchMax));
+
+% Recalculate the means
+meanNormTracesBaseSubtrAdj = squeeze(nanmean(normTracesBaseSubtrAdj,2));
+meanNormTracesBaseSubtr100Adj = squeeze(nanmean(normTracesBaseSubtr100Adj,2));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 % Calculate STEM of frequency TCs over cells
 STEMnormTracesBaseSubtr100 = nan(2*totalConds-2, totalDatapoints);
+STEMnormTracesBaseSubtr = nan(2*totalConds-2, totalDatapoints);
+STEMnormTracesBaseSubtr100Adj = nan(2*totalConds-2, totalDatapoints);
+STEMnormTracesBaseSubtrAdj = nan(2*totalConds-2, totalDatapoints);
 for cond = 1 : 2*totalConds-2
     for datapoint = 1:totalDatapoints
         STEMnormTracesBaseSubtr100(cond, datapoint) = nanstd(normTracesBaseSubtr100(cond, :, datapoint))/sqrt(sum(~isnan(normTracesBaseSubtr100(cond, :, datapoint))));
+        STEMnormTracesBaseSubtr(cond, datapoint) = nanstd(normTracesBaseSubtr(cond, :, datapoint))/sqrt(sum(~isnan(normTracesBaseSubtr(cond, :, datapoint))));
+        STEMnormTracesBaseSubtr100Adj(cond, datapoint) = nanstd(normTracesBaseSubtr100Adj(cond, :, datapoint))/sqrt(sum(~isnan(normTracesBaseSubtr100Adj(cond, :, datapoint))));
+        STEMnormTracesBaseSubtrAdj(cond, datapoint) = nanstd(normTracesBaseSubtrAdj(cond, :, datapoint))/sqrt(sum(~isnan(normTracesBaseSubtrAdj(cond, :, datapoint))));
     end 
 end
 
 
 %% Analysis for Fig 25b - reproduction of fig 5bi from eLife 2020 (average amplitude of normalized and baseline subtr traces)
+% analysis for Fig 26c - reproduction of fig 8di(1) from eLife 2020 (average amplitude of normalized and baseline subtr traces)
+% analysis for Fig 26d - reproduction of fig 8di(2) from eLife 2020 (average amplitude of normalized and baseline subtr traces)
 
 if sessionInfoAll.trialDuration == 18
-    amplInt = [17 18]; % in data points
+    amplInt = [17 19]; % in data points [17 18] % as long as these are the same with searchMax, the amplitude in the conditions for normalization will be 1
 elseif sessionInfoAll.trialDuration == 6
-    amplInt = [31 33];
+    amplInt = [31 33];% [31 32]
+elseif sessionInfoAll.trialDuration == 9
+    amplInt = [46 48];% [46 48]
 end
 
+allStimAmplNormTracesBaseSubtr = nan(2*totalConds-2, totalUnits, totalStim);
 allStimAmplNormTracesBaseSubtr100 = nan(2*totalConds-2, totalUnits, totalStim);
 
 for cond = 1:2*totalConds-2
     for unit = find(iUnitsFilt & baseSelect)  
         for stim = 1:totalStim 
+            allStimAmplNormTracesBaseSubtr(cond, unit, stim) = nanmean(normTracesBaseSubtr(cond, unit, (stim-1)*(3/bin)+amplInt(1):(stim-1)*(3/bin)+amplInt(2)),3);
             allStimAmplNormTracesBaseSubtr100(cond, unit, stim) = nanmean(normTracesBaseSubtr100(cond, unit, (stim-1)*(3/bin)+amplInt(1):(stim-1)*(3/bin)+amplInt(2)),3);
-       end
+        end
     end
 end
 
 % Calculate mean and STEM of amplitudes
-% meanAllStimAmplNormTracesBaseSubtr100 = nan(2*totalConds-2, totalStim);
+meanAllStimAmplNormTracesBaseSubtr= squeeze(nanmean(allStimAmplNormTracesBaseSubtr,2));
 meanAllStimAmplNormTracesBaseSubtr100= squeeze(nanmean(allStimAmplNormTracesBaseSubtr100,2));
 
+STEMallStimAmplNormTracesBaseSubtr = nan(2*totalConds-2, totalStim);
 STEMallStimAmplNormTracesBaseSubtr100 = nan(2*totalConds-2, totalStim);
 
 for cond = 1:2*totalConds-2
     for stim = 1:totalStim
+        STEMallStimAmplNormTracesBaseSubtr(cond, stim) = nanstd(allStimAmplNormTracesBaseSubtr(cond,:, stim))/sqrt(sum(~isnan(allStimAmplNormTracesBaseSubtr(cond,:, stim))));  
         STEMallStimAmplNormTracesBaseSubtr100(cond, stim) = nanstd(allStimAmplNormTracesBaseSubtr100(cond,:, stim))/sqrt(sum(~isnan(allStimAmplNormTracesBaseSubtr100(cond,:, stim))));  
+
     end
 end
 
 for cond = (1:2:totalConds)
     for stim = 1:totalStim
+        [hAllStimAmplNormTracesBaseSubtr((cond+1)/2, stim), pAllStimAmplNormTracesBaseSubtr((cond+1)/2, stim)] =ttest(allStimAmplNormTracesBaseSubtr(cond,:, stim),allStimAmplNormTracesBaseSubtr(cond+1,:, stim)); % opt vs vis
+        [pAllStimAmplNormTracesBaseSubtrW((cond+1)/2, stim), hAllStimAmplNormTracesBaseSubtrW((cond+1)/2, stim)] =signrank(allStimAmplNormTracesBaseSubtr(cond,:, stim),allStimAmplNormTracesBaseSubtr(cond+1,:, stim)); %  opt vs vis
+ 
         [hAllStimAmplNormTracesBaseSubtr100((cond+1)/2, stim), pAllStimAmplNormTracesBaseSubtr100((cond+1)/2, stim)] =ttest(allStimAmplNormTracesBaseSubtr100(cond,:, stim),allStimAmplNormTracesBaseSubtr100(cond+1,:, stim)); % opt vs vis
         [pAllStimAmplNormTracesBaseSubtr100W((cond+1)/2, stim), hAllStimAmplNormTracesBaseSubtr100W((cond+1)/2, stim)] =signrank(allStimAmplNormTracesBaseSubtr100(cond,:, stim),allStimAmplNormTracesBaseSubtr100(cond+1,:, stim)); %  opt vs vis
     end   
@@ -1181,8 +1228,12 @@ end
 
 for cond = (totalConds+1:2:2*totalConds-2)
     for stim = 1:totalStim
+        [hAllStimAmplNormTracesBaseSubtr((cond+1)/2, stim), pAllStimAmplNormTracesBaseSubtr((cond+1)/2, stim)] =ttest(allStimAmplNormTracesBaseSubtr(cond- totalConds,:, stim),allStimAmplNormTracesBaseSubtr(cond+1,:, stim)); % V vs Vph- Sph
+        [pAllStimAmplNormTracesBaseSubtrW((cond+1)/2, stim), hAllStimAmplNormTracesBaseSubtrW((cond+1)/2, stim)] =signrank(allStimAmplNormTracesBaseSubtr(cond-totalConds,:, stim),allStimAmplNormTracesBaseSubtr(cond+1,:, stim)); % V vs Vph- Sph
+       
         [hAllStimAmplNormTracesBaseSubtr100((cond+1)/2, stim), pAllStimAmplNormTracesBaseSubtr100((cond+1)/2, stim)] =ttest(allStimAmplNormTracesBaseSubtr100(cond- totalConds,:, stim),allStimAmplNormTracesBaseSubtr100(cond+1,:, stim)); % V vs Vph- Sph
         [pAllStimAmplNormTracesBaseSubtr100W((cond+1)/2, stim), hAllStimAmplNormTracesBaseSubtr100W((cond+1)/2, stim)] =signrank(allStimAmplNormTracesBaseSubtr100(cond-totalConds,:, stim),allStimAmplNormTracesBaseSubtr100(cond+1,:, stim)); % V vs Vph- Sph
+
     end   
 end
 
@@ -1221,13 +1272,15 @@ end
 
 
 %% Anaylsis for Fig. 25d - reproduction of fig 5biii from eLife 2020 (average magnitude of normalized and baseline subtr traces)
+% Analysis for Fig. 26e (1x) : reproduction of fig 8bi from eLife 2020 (average magnitude of normalized and baseline subtr traces)
 
 
 if totalStim == 6
     allStimMagnNormTracesBaseSubtr100 = allStimAmplNormTracesBaseSubtr100 - allStimBaseNormTracesBaseSubtr100;% 2*totalConds-2, totalUnits, numel(baseStim)
-% elseif totalStim == 1 % to be modified
-end    
-
+elseif totalStim == 1 % to be modified
+    allStimMagnNormTracesBaseSubtr100 = allStimAmplNormTracesBaseSubtr100 - allStimBaseNormTracesBaseSubtr100(:,:,3);% 2*totalConds-2, totalUnits, numel(baseStim)
+end
+    
 % Calculate mean and STEM of baselines
 meanAllStimMagnNormTracesBaseSubtr100= squeeze(nanmean(allStimMagnNormTracesBaseSubtr100,2));
 
@@ -1235,19 +1288,20 @@ STEMallStimMagnNormTracesBaseSubtr100 = nan(2*totalConds-2, totalStim);
 
 for cond = 1:2*totalConds-2
     for stim = 1:totalStim
-        STEMallStimMagnNormTracesBaseSubtr100(cond, stim) = nanstd(allStimMagnNormTracesBaseSubtr100(cond,:, stim))/sqrt(sum(~isnan(allStimMagnNormTracesBaseSubtr100(cond,:, stim))));  
+        STEMallStimMagnNormTracesBaseSubtr100(cond, stim) = nanstd(allStimMagnNormTracesBaseSubtr100(cond,:, stim))/sqrt(sum(~isnan(allStimMagnNormTracesBaseSubtr100(cond,:, stim))));
     end
 end
 
 for cond = (1:2:totalConds)
     for stim = 1:totalStim
-        [hAllStimMagnNormTracesBaseSubtr100((cond+1)/2, stim), pAllStimMagnNormTracesBaseSubtr100((cond+1)/2, stim)] =ttest(allStimMagnNormTracesBaseSubtr100(1,:, stim),allStimMagnNormTracesBaseSubtr100(cond+1,:, stim)); % opt vs vis 100%
-        [pAllStimMagnNormTracesBaseSubtr100W((cond+1)/2, stim), hAllStimMagnNormTracesBaseSubtr100W((cond+1)/2, stim)] =signrank(allStimMagnNormTracesBaseSubtr100(1,:, stim),allStimMagnNormTracesBaseSubtr100(cond+1,:, stim)); %  opt vs vis 100%
-    end   
+        [hAllStimMagnNormTracesBaseSubtr100((cond+1)/2, stim), pAllStimMagnNormTracesBaseSubtr100((cond+1)/2, stim)] =ttest(allStimMagnNormTracesBaseSubtr100(cond,:, stim),allStimMagnNormTracesBaseSubtr100(cond+1,:, stim)); % opt vs vis 100%
+        [pAllStimMagnNormTracesBaseSubtr100W((cond+1)/2, stim), hAllStimMagnNormTracesBaseSubtr100W((cond+1)/2, stim)] =signrank(allStimMagnNormTracesBaseSubtr100(cond,:, stim),allStimMagnNormTracesBaseSubtr100(cond+1,:, stim)); %  opt vs vis 100%
+    end
 end
 for cond = (totalConds+1:2:2*totalConds-2)
     for stim = 1:totalStim
         [hAllStimMagnNormTracesBaseSubtr100((cond+1)/2, stim), pAllStimMagnNormTracesBaseSubtr100((cond+1)/2, stim)] =ttest(allStimMagnNormTracesBaseSubtr100(cond- totalConds,:, stim),allStimMagnNormTracesBaseSubtr100(cond+1,:, stim)); % V vs Vph- Sph
         [pAllStimMagnNormTracesBaseSubtr100W((cond+1)/2, stim), hAllStimMagnNormTracesBaseSubtr100W((cond+1)/2, stim)] =signrank(allStimMagnNormTracesBaseSubtr100(cond-totalConds,:, stim),allStimMagnNormTracesBaseSubtr100(cond+1,:, stim)); % V vs Vph- Sph
-    end   
+    end
 end
+ 

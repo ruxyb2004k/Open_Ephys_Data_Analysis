@@ -62,7 +62,7 @@ end
 max_hist1 = max(max(meanAllStimMagnNormTracesBaseSubtr100))*1.5;
 
 ylabel('Norm. magnitude');
-
+set(ax,'xtick',[1:1:numel(baseStim)]) % set major ticks
 set(ax, 'TickDir', 'out');
 set(ax,'YLim',[0 max_hist1]);
 set(ax,'FontSize',fs)
@@ -70,7 +70,9 @@ set(ax,'FontSize',fs)
 title(titleFig25d,'FontSize',18);
 background = get(gcf, 'color');
 
-     
+h1 = line([1.7 4.3], [max_hist1 max_hist1]);
+set(h1,'Color',[0.25 0.61 1] ,'LineWidth',4);% Set properties of lines
+
 if saveFigs == true
     savefig(strcat(savePath, saveFig25d{1}));
     title('');

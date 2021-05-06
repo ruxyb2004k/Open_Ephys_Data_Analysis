@@ -26,7 +26,7 @@ for cond = (1:2:totalConds)
     max_hist1 = 1.5 * max(max(meanNormTraceFreqAll(cond:cond+1,:)));
     min_hist = -0.5;
     xlabel('Time [sec]');
-    ylabel('Norm. average spike freq.');
+    ylabel('Norm. avg. sp. freq.');
     set(ax,'XLim',[plotBeg plotEnd],'FontSize',fs);
     set(ax, 'TickDir', 'out');
     set(ax,'YLim',[min_hist max_hist1],'FontSize',fs)

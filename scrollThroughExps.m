@@ -20,7 +20,6 @@ filt = true(numFilt,size(expSet,2));
 % filt(7,:) = [expSet.expSel1] == 1; % first experiment selection
 % filt(8,:) = [expSet.expSel2] == 1; % 2nd experiment selection
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 combinedFilter = sum(filt,1) == numFilt;

@@ -26,9 +26,6 @@ savePath = basePathMatlab;
 saveFigs = true;
 
 savePathFigs = fullfile(basePathMatlab, 'figs');
-if ~exist(basePathData, 'dir')
-     mkdir(savePathFigs);
-end     
 
 savePathGood = fullfile(savePathFigs, 'good');
 if ~exist(savePathGood, 'dir')
@@ -336,7 +333,7 @@ save(filenameClusterTimeSeries, 'clusterTimeSeries')
 
 
 %%%%%%%%% change parameters here %%%%%%%%%
-% selectedCodesIndMuaUser = (31:60)%(1:numel(muaCodes)/2); % it will not be considered if it's empty or commented out
+% selectedCodesIndMuaUser = [8,31,71,81];%(1:numel(muaCodes)/2); % it will not be considered if it's empty or commented out
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if exist('selectedCodesIndMuaUser', 'var') && ~isempty(selectedCodesIndMuaUser) 

@@ -24,10 +24,10 @@ if totalStim == 1
     set(ax,'YLim',[min_hist max_hist1],'FontSize',fs)
     set(ax,'FontSize',fs)
     title(titleFig21{1});
-    h1 = line([0.2 5.2],[max_hist1 max_hist1]);
+    h1 = line(sessionInfoAll.optStimInterval,[max_hist1 max_hist1]);
     set(h1,'Color',[0.25 0.61 1] ,'LineWidth',4);% Set properties of lines
     fact = 0.95;
-    x = [4 4.2];
+    x = [sessionInfoAll.visStim; sessionInfoAll.visStim + 0.2]';
     if cond < totalConds-1
         h2 = line('XData',x,'YData',fact*[max_hist1 max_hist1]); %line([-2.4 -2.2],[fact*max_hist2 fact*max_hist2]);
         set(h2,'Color',[0.25 0.25 0.25] ,'LineWidth',4);% Set properties of lines

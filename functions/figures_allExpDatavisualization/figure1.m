@@ -28,7 +28,7 @@ for cond = (1:2:totalConds)
     min_hist = 0;
     
     xlabel('Time [sec]');
-    ylabel('Average spike freq. (Hz)');
+    ylabel('Avg. spike freq. (Hz)');
     set(ax,'XLim',[plotBeg plotEnd],'FontSize',fs);
     % set(ax,'xtick',[ceil(-plotBeg):2:floor(plotEnd)]) % set major ticks
     set(ax, 'TickDir', 'out');

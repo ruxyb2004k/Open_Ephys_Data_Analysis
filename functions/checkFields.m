@@ -11,7 +11,7 @@ switch s
         
     case 'timeSeries'    
         fields = {'recStartDataPoint', 'events', 'dataPoints', 'timestamps', 'info', 'medCh', 'stdCh',...
-            'range1', 'range2', 'subTrialsForAnalysis', 'timestampsRange', 'trialsForAnalysis', 'gain'};
+            'range1', 'range2', 'subTrialsForAnalysis', 'timestampsRange', 'trialsForAnalysis', 'gain', 'ts'};
         
     case 'spikeClusterData'        
         fields = {'clusterSoftware', 'trialsForAnalysisSelected', 'times', 'channelPosition',...

@@ -11,7 +11,7 @@ end
 
 cond = 1;
 figure
-
+min_hist1 = -0.2;
 ax = gca;
 hold on
 conds = [1,2,4,6];
@@ -21,15 +21,16 @@ if totalStim == 6
         errorbar((1:totalStim),meanAllStimBaseNormTracesBaseSubtr100(cond,:),STEMallStimBaseNormTracesBaseSubtr100(cond,:), 'Color', C(cond,:));
     
         if cond ~= 1
-            for stim = 1:totalStim
+            for stim = 2:totalStim
                 p_temp =  pAllStimBaseNormTracesBaseSubtr100(cond/2, stim);
-                y = min(meanAllStimBaseNormTracesBaseSubtr100(conds, stim)-STEMallStimBaseNormTracesBaseSubtr100(conds, stim));
+                y = max(meanAllStimBaseNormTracesBaseSubtr100(conds, stim)+STEMallStimBaseNormTracesBaseSubtr100(conds, stim));
+                min_hist1 = min(min(min(meanAllStimBaseNormTracesBaseSubtr100(conds, :)-STEMallStimBaseNormTracesBaseSubtr100(conds, :))), min_hist1);
                 if p_temp <= 0.001
-                    text(stim, y*1.05-cond/300,'***','FontSize',10, 'Color', C(cond,:), 'HorizontalAlignment','center');
+                    text(stim, y*1.01+cond/100,'***','FontSize',10, 'Color', C(cond,:), 'HorizontalAlignment','center');
                 elseif p_temp <= 0.01
-                    text(stim, y*1.05-cond/300,'**','FontSize',10, 'Color', C(cond,:), 'HorizontalAlignment','center');
+                    text(stim, y*1.01+cond/100,'**','FontSize',10, 'Color', C(cond,:), 'HorizontalAlignment','center');
                 elseif p_temp <= 0.05
-                    text(stim, y*1.05-cond/300,'*','FontSize',10, 'Color', C(cond,:), 'HorizontalAlignment','center');
+                    text(stim, y*1.01+cond/100,'*','FontSize',10, 'Color', C(cond,:), 'HorizontalAlignment','center');
                 end
             end
         end
@@ -61,9 +62,12 @@ end
 max_hist1 = max(max(meanAllStimBaseNormTracesBaseSubtr100))*2.5;
 line([plotBeg plotEnd], [0 0], 'Color', [.5 .5 .5 ])
 ylabel('Norm. baseline');
+set(ax,'xtick',[1:1:numel(baseStim)]) % set major ticks
+h1 = line([1.7 4.3], [max_hist1 max_hist1]);
+set(h1,'Color',[0.25 0.61 1] ,'LineWidth',4);% Set properties of lines
 
 set(ax, 'TickDir', 'out');
-set(ax,'YLim',[-0.2 max_hist1]);
+set(ax,'YLim',[min_hist1 max_hist1]);
 set(ax,'FontSize',fs)
 set(ax,'FontSize',fs)
 title(titleFig25c,'FontSize',18);
@@ -73,8 +77,7 @@ background = get(gcf, 'color');
 if saveFigs == true
     savefig(strcat(savePath, saveFig25c{1}));
     title('');
-    saveas(gcf, strcat(savePath, saveFig25c{1}(1:end-3), 'png'));
-    
+    saveas(gcf, strcat(savePath, saveFig25c{1}(1:end-3), 'png'));    
 end
 
 

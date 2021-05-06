@@ -22,6 +22,7 @@ if totalStim == 6
     plot((1:totalStim),meanNormAllStimAmpl100(2, :),'Marker','.','LineWidth', 3, 'Color', C(2,:)); hold on    
     xlabel('Stim #')
     set(ax,'XLim',[0.8 totalStim+0.2],'FontSize',fs);
+    set(ax,'xtick',[1:totalStim]) % set major ticks
     errorbar((1:totalStim),meanNormAllStimAmpl100(1,:),STEMnormAllStimAmpl100(1,:), 'Color', C(1,:)); hold on
     errorbar((1:totalStim),meanNormAllStimAmpl100(2,:),STEMnormAllStimAmpl100(2,:), 'Color', C(2,:)); hold on
     for stim = 1:totalStim
@@ -36,34 +37,34 @@ if totalStim == 6
         end
     end  
 elseif totalStim == 1
-    plot((1:totalConds/2-1),meanNormAllStimAmpl100(1:2:end-2, :),'Marker','.','LineWidth', 3, 'Color', C(1,:)); hold on
-    plot((1:totalConds/2-1),meanNormAllStimAmpl100(2:2:end-2, :),'Marker','.','LineWidth', 3, 'Color', C(2,:)); hold on
+    plot(contrasts,meanNormAllStimAmpl100(1:2:end-2, :),'Marker','.','LineWidth', 3, 'Color', C(1,:)); hold on
+    plot(contrasts,meanNormAllStimAmpl100(2:2:end-2, :),'Marker','.','LineWidth', 3, 'Color', C(2,:)); hold on
     xlabel('Contrast');
-    xticks(1:totalConds/2-1);
-    xticklabels({'100%', '50%', '25%', '12%'});
-    set(ax,'XLim',[0.8 totalConds/2-1+0.2],'FontSize',fs);
-    errorbar((1:totalConds/2-1),meanNormAllStimAmpl100(1:2:end-2, :),STEMnormAllStimAmpl100(1:2:end-2,:), 'Color', C(1,:)); hold on
-    errorbar((1:totalConds/2-1),meanNormAllStimAmpl100(2:2:end-2, :),STEMnormAllStimAmpl100(2:2:end-2,:), 'Color', C(2,:)); hold on
+    set(ax,'xtick',contrasts(end:-1:1)) % set major ticks
+%     xticks(1:totalConds/2-1);
+%     xticklabels({'100%', '50%', '25%', '12%'});
+%     set(ax,'XLim',[0.8 totalConds/2-1+0.2],'FontSize',fs);
+    errorbar(contrasts,meanNormAllStimAmpl100(1:2:end-2, :),STEMnormAllStimAmpl100(1:2:end-2,:), 'Color', C(1,:)); hold on
+    errorbar(contrasts,meanNormAllStimAmpl100(2:2:end-2, :),STEMnormAllStimAmpl100(2:2:end-2,:), 'Color', C(2,:)); hold on
     for cond = 1:2:totalConds-2
         p_temp =  pNormAllStimAmpl100((cond+1)/2);
         y = max(meanNormAllStimAmpl100(cond:cond+1)+STEMnormAllStimAmpl100(cond:cond+1));
         if p_temp <= 0.001
-            text((cond+1)/2, y+0.05*sign(y),'***','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
+            text(contrasts((cond+1)/2), y+0.05*sign(y),'***','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
         elseif p_temp <= 0.01
-            text((cond+1)/2, y+0.05*sign(y),'**','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
+            text(contrasts((cond+1)/2), y+0.05*sign(y),'**','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
         elseif p_temp <= 0.05
-            text((cond+1)/2, y+0.05*sign(y),'*','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
+            text(contrasts((cond+1)/2), y+0.05*sign(y),'*','FontSize',10, 'Color', 'b', 'HorizontalAlignment','center');
         end
     end  
     
 end
 max_hist1 = max(max(meanNormAllStimAmpl100))*1.2;
 
-ylabel('Normalized amplitude');
+ylabel('Norm. amplitude');
 
 set(ax, 'TickDir', 'out');
 %     set(ax,'YLim',[-0.2 max_hist1]);
-set(ax,'FontSize',fs)
 set(ax,'FontSize',fs)
 title(titleFig6b,'FontSize',18);
 background = get(gcf, 'color');
