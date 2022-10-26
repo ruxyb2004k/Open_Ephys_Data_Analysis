@@ -114,7 +114,8 @@ patchSaturation=0.25; %How de-saturated or transparent to make patch
 if transparent
     faceAlpha=patchSaturation;
     patchColor=col;
-    set(gcf,'renderer','openGL')
+%     set(gcf,'renderer','openGL')% modified by RB - commented out
+    set(gcf,'renderer','painters')% modified by RB - added
 else
     faceAlpha=1;
     patchColor=col+(1-col)*(1-patchSaturation);

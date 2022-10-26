@@ -1,12 +1,11 @@
 %%% load raw data and create session metadata %%%
 %%% written by RB 22.04.2021 %%%
 %%% update: loades previously saved experiment
-% make sure you are in this file's folder
 
 global i x1 y1 y2 y3 recStartDataPoint z z_filt1 z_filt2 samplingRate
 
-experimentName = '2021-05-03_13-58-26_ignore'
-sessionName = 'V1_20210415_2'
+experimentName = '2021-10-21_13-34-39'
+sessionName = 'V1_20211021_2'
 
 
 path = strsplit(pwd,filesep);
@@ -23,6 +22,7 @@ end
 filenameSessionInfo = fullfile(basePathMatlab,[sessionName,'.sessionInfo.mat']); % general info about the session
 filenameTimeSeries = fullfile(basePathMatlab,[sessionName,'.timeSeries.mat']); % time series info
 filenameTmpName = fullfile(basePathMatlab,'tmpName.mat'); % temporary files
+filenameGainCh = fullfile(basePathMatlab,'gainCh.mat'); % temporary files
 
 % try to load structures if they don't already exist in the workspace
 [sessionInfo, SIexist] = tryLoad('sessionInfo', filenameSessionInfo);
@@ -42,25 +42,25 @@ end
 tic
 %%%%%%% insert session-specific paramteres here %%%%%%%%%%
 
-recordingDepth = [-555 -535]'; % !!! Modify for each experiment !!!
-channelNo = 64;
-probe = '2x32_H6';%'2x16_E1';% '1x16_P1' 
-animal.name = '20210407_LV1';
-animal.sex = 'm';
-animal.strain = 'NexCre';
+recordingDepth = [-450 -440]'; % !!! Modify for each experiment !!!
+channelNo = 32;%64;%
+probe = '2x16_E1';% '1x16_P1''2x32_H6';% 
+animal.name = '20211012_LV1';
+animal.sex = 'f';
+animal.strain = 'Gad2Cre';%'Gad2Cre';
 animal.virus = 'AAV9-mOp2A';
 recRegion = animal.name(end-2:end);%e.g., 'RV1', 'LV1';
-chOffset = 0; % 0 for 16- and 64-channel probes; 16 for 32-channel probe
+chOffset = 16;%0; % 0 for 16- and 64-channel probes; 16 for 32-channel probe
 
 conditionNames= [];
 conditionNames.c100visStim = 1; % 
 conditionNames.c100optStim = 33; % 
-% conditionNames.c50visStim = 4;
-% conditionNames.c50optStim = 36;
-% conditionNames.c25visStim = 6; % 
-% conditionNames.c25optStim = 38; % 
-% conditionNames.c12visStim = 8; % 
-% conditionNames.c12optStim = 40; % 
+conditionNames.c50visStim = 3;
+conditionNames.c50optStim = 35;
+conditionNames.c25visStim = 5; % 
+conditionNames.c25optStim = 37; % 
+conditionNames.c12visStim = 7; % 
+conditionNames.c12optStim = 39; % 
 conditionNames.c0visStim = 0; 
 conditionNames.c0optStim = 32;
 
@@ -91,17 +91,17 @@ conditionNames.c0optStim = 32;
 
 afterTrialTime = 0; % time after trial for display
 
-trialDuration = 18;% Long stimulation protocol (7)
-preTrialTime = 3; % time before 0 for display
-visStim = (0.2:3:15.2);
-optStimInterval = [2 10];
-visStimDuration = 0.2;
-
-% trialDuration = 9;% Contrast protocol (3)
-% preTrialTime = 2; % time before 0 for display
-% visStim = (7);
-% optStimInterval = [0.2 8.2];
+% trialDuration = 18;% Long stimulation protocol (7)
+% preTrialTime = 3; % time before 0 for display
+% visStim = (0.2:3:15.2); 
+% optStimInterval = [2 10];
 % visStimDuration = 0.2;
+
+trialDuration = 9;% Contrast protocol (3)
+preTrialTime = 2; % time before 0 for display
+visStim = (7);
+optStimInterval = [0.2 8.2];
+visStimDuration = 0.2;
 
 % trialDuration = 6;% Contrast protocol (2)
 % preTrialTime = 2; % time before 0 for display
@@ -170,7 +170,7 @@ sessionInfo.visStimDuration = visStimDuration;
 timeSeries.events.dataEv = dataEv;
 timeSeries.events.timestampsEv = timestampsEv;
 timeSeries.events.infoEv = infoEv;
-timestamps1 = timestamps; % timestamps of hte first read channel
+timestamps1 = timestamps; % timestamps of the first read channel
 
 % load the rest of the data
 dataPoints = numel(data(1,:));
@@ -237,7 +237,7 @@ timeSeries.timestamps = timestamps;
 timeSeries.info = info;
 timeSeries.medCh = med;
 timeSeries.stdCh = std_ch;
-timeSeries.ts = ts;
+timeSeries.ts = ts; % it looks like ts is redundant because it is the same as timestamps
 
 % Save the metadata structures
 if exist(filenameSessionInfo,'file')
@@ -252,10 +252,12 @@ else
 end    
 
 toc
+
+find(std_ch > mean(std_ch) + std(std_ch) | std_ch < mean(std_ch) - std(std_ch))
 %% Calculations for fig with epochs + plot figure
 close all
 
-selCh = 46; % selected channel for figure and calculation 
+selCh = 17; % selected channel for figure and calculation 
 totalEpochs = numel(condData.codes);
 
 std_z = zeros(totalEpochs,1);
@@ -329,7 +331,7 @@ end
 if exist('max_z_filt1', 'var') == 1
     subplot(totalSubplots,1,7)
     plot(max_z_filt1); hold on
-    plot(xlim, [1 1]*327, '--k') % gain 1002020-12-01_15-18-49
+    plot(xlim, [1 1]*327, '--k') % gain 100
     plot(xlim, [1 1]*655, '--g') % gain 50
     plot(xlim, [1 1]*1638, '--b') % gain 20
     plot(xlim, [1 1]*3276, '--r') % gain 10
@@ -371,7 +373,7 @@ range2 = [];
 % leave it empty
 subTrialsForAnalysis = 1:numel(recStartDataPoint)-1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-exclude = [69:100]; %state here what trials you want to exclude
+exclude = [2,22,31,42]; %state here what trials you want to exclude
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subTrialsForAnalysis = countformepls(subTrialsForAnalysis,totalConds,exclude);
 
@@ -397,7 +399,7 @@ timeSeries.trialsForAnalysis = timeSeries.subTrialsForAnalysis(totalConds:totalC
 
 close all
 % clearvars z z_filt1 z_filt2 x1 y1 y2 y3 % possibly redundant if the next line also deletes global variables
-clearvars -except filenameTmpName timeSeries med range1 channelNo dataPoints sessionInfo filenameSessionInfo filenameTimeSeries experimentName sessionName basePathKilosort basePathData chOffset dataEv timestampsEv ts 
+clearvars -except filenameTmpName filenameGainCh timeSeries med range1 channelNo dataPoints sessionInfo filenameSessionInfo filenameTimeSeries experimentName sessionName basePathKilosort basePathData chOffset dataEv timestampsEv ts 
 %%
 % save and delete timeSeries to empty memory
 
@@ -448,28 +450,25 @@ parfor j = 1:channelNo
         end
     end
 
-
-
     data = data(ismember(timestamps, ts));% in case a channel is missing data points, this command will align its data with the timestamps common for all channels
     disp(['Filtering channel ', num2str(j), '...'])
     data_filt_1 = highpass(data(range1), 150, rf); % highpass 150 Hz
     m = max([max(data_filt_1), abs(min(data_filt_1))]);
-    gainCh(j)=suggestGain(m); % initial gain for each channel
-    
+    gainCh(j)=suggestGain(m); % initial gain for each channel   
     
     tmpName{j} = [tempname, '.dat'];
     fileID = fopen(tmpName{j},'w');
     fwrite(fileID,data_filt_1*gainCh(j), 'int16');
     fclose(fileID);
-    
-%     data_filt(j,:) = int16(data_filt_1*gainCh(j));
 end
 gain = min(gainCh);
 disp(['Suggested gain: ', num2str(gain)]);
 
-% save tmpName in case matlab crashes
+% save tmpName and gainCh in case matlab crashes
 disp('Saving tmpName.mat file')
 save(filenameTmpName, 'tmpName');
+disp('Saving gainCh.mat file')
+save(filenameGainCh, 'gainCh');
 
 % Overwrite the timeSeries structure
 [timeSeries, TSexist] = tryLoad('timeSeries', filenameTimeSeries);
@@ -485,6 +484,8 @@ end
 clearvars timeSeries
 
 % open temporary files and copy the data to data_filt
+% run the code from here on if Matlab crashes after loading tmpName.mat and
+% gainCh.mat
 
 data_filt = int16(zeros(1, numel(range1)));
 
@@ -493,7 +494,7 @@ for j = 1:channelNo
     fileID = fopen(tmpName{j});
     data_ch(1,:)= fread(fileID, '2*int16');
     fclose(fileID);
-    delete(tmpName{j}); %%% recycle needed?
+%     delete(tmpName{j}); %%% recycle needed?
     data_filt(j,:) = data_ch(1,:)/(gainCh(j)/gain);
 end
 toc
@@ -501,8 +502,7 @@ toc
 % filenameTimeSeries = fullfile(basePathMatlab,[sessionName,'.timeSeries.mat']); % time series info
 
 
-
-%% save the dat file, metadata structures and metadata .mat file
+% save the dat file and metadata .mat file
 
 % save the dat file
 datFilename = [basePathKilosort, filesep, sessionName, '.dat']
@@ -514,7 +514,12 @@ else
     fclose(f);
 end    
 clearvars data_filt
+
+for j = 1:channelNo    
+    delete(tmpName{j});
+end
 delete(filenameTmpName); 
+delete(filenameGainCh)
 
 % save experiment details in a metadata .mat file:
 if exist('allExp.mat','file') %load structure containing all experiments if it already exists
@@ -540,6 +545,7 @@ if ~a % if the experiment doesn't already exist, add it and save allExp.mat
     allExp(entry).trialDuration = sessionInfo.trialDuration;
     allExp(entry).expSel1 = 2;
     allExp(entry).expSel2 = 2;
+    allExp(entry).expSel3 = 2;
     % sort the entries by experimentName
     experimentNameValuesNew = extractfield(allExp,'experimentName');
     [x,idx]=sort([experimentNameValuesNew]);

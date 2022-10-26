@@ -1,31 +1,37 @@
-function [structAll] = addToStruct(structExp, structAll)
+function [structAll] = addToStruct(structExp, structAll, allProt)
 
 s = inputname(1);
 
 switch s % <; is 1>, <, is 2>
-%     case 'sessionInfo'
-%        
-%     case 'timeSeries'    
+    case 'sessionInfo'
+       dimCatFields.nChannels = 1;
+
+    case 'timeSeries'   
+        dimCatFields.stdCh = 1;
 %        
     case 'spikeClusterData'
         dimCatFields.goodCodes = 1;
+        dimCatFields.uniqueCodes = 1;
+%         dimCatFields.uniqueCodesRealDepth = 1;
        
     case 'clusterTimeSeries'
 %         dimCatFields.selectedCodesIndSpont = 2; % keep commented
 
         dimCatFields.iSelectedCodesInd = 2;
         dimCatFields.iSelectedCodesIndSpont = 2;
-        % comment out the next 10 lines when only looking at fig 15
-%         dimCatFields.traceFreqGood = 2;
-%         dimCatFields.traceFreqGoodSel = 2;
-%         dimCatFields.statsSua.pSua = 2;
-%         dimCatFields.statsSua.pSuaW = 2;
-%         dimCatFields.statsSua.pSuaBase = 2;
-%         dimCatFields.statsSua.pSuaBaseW = 2;
-%         dimCatFields.statsSua.pSuaBaseSameCond = 2;
-%         dimCatFields.statsSua.pSuaBaseSameCondW = 2;
-%         dimCatFields.statsSua.pSuaBaseComb = 1;
-%         dimCatFields.statsSua.pSuaBaseCombW = 1;
+        if ~allProt 
+            dimCatFields.traceByTrial = 2;
+            dimCatFields.traceFreqGood = 2;
+            dimCatFields.traceFreqGoodSel = 2;
+            dimCatFields.statsSua.pSua = 2;
+            dimCatFields.statsSua.pSuaW = 2;
+            dimCatFields.statsSua.pSuaBase = 2;
+            dimCatFields.statsSua.pSuaBaseW = 2;
+            dimCatFields.statsSua.pSuaBaseSameCond = 2;
+            dimCatFields.statsSua.pSuaBaseSameCondW = 2;
+            dimCatFields.statsSua.pSuaBaseComb = 1;
+            dimCatFields.statsSua.pSuaBaseCombW = 1;
+        end
         
     case 'cellMetrics'        
 %         dimCatFields.waveformDataFilt = 2;
@@ -53,7 +59,15 @@ switch s % <; is 1>, <, is 2>
         for fieldInd = 1:numel(fields)
             field = char(fields(fieldInd));
             dimCatFields.acg_metrics.(field) = 2;
-        end  
+        end
+        
+    case 'lfp'
+        dimCatFields.channelsToLoad = 2;
+%         dimCatFields.Spectr.P_mean = 1;
+        dimCatFields.Spectr.P = 1;
+        dimCatFields.FFT.P1_shortMean = 1;
+        dimCatFields.FFT.P1_shortLast3Mean = 1;
+        dimCatFields.FFT.P1_shortVisOptStimMean = 1;
         
 end
 

@@ -118,7 +118,7 @@ if ~SCDexist
 end
 %%
 % modify when selecting different trials than already selected in load_command
-% spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis([1:13,15:end]);
+% spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis([1:10]);
 
 conditionFieldnames = fieldnames(sessionInfo.conditionNames); % extract conditionNames (c0visStim c100visStim etc)
 totalConds = numel(conditionFieldnames);
@@ -159,10 +159,10 @@ for condInt = 1:totalConds % for all conditions
                 
     end
 end
-spikeClusterData.spikeTimes = spikeTimes
-
-RefPerAndFalsePos_A1
-
+if ~SCDexist
+    spikeClusterData.spikeTimes = spikeTimes
+    RefPerAndFalsePos_A1
+end
 
 if numel(spikeClusterData.trialsForAnalysisSelected) ~= numel(timeSeries.trialsForAnalysis)
     warning('Are you sure some trials should be missing? Check spikeClusterData.trialsForAnalysisSelected on line 120 ');

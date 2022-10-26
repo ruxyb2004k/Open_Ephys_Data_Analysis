@@ -309,9 +309,14 @@ statsSuaF % Stats 1
 disp('Calculations on selected codes')
 selectedCodesInd = find(respMat ~=3);
 selectedCodes = goodCodes(selectedCodesInd); % selected codes 
-selectedCodesEv = selectedCodes(~logical(selectedCodesIndSpont));
-selectedCodesSpont = selectedCodes(logical(selectedCodesIndSpont));
-
+if ~isempty(selectedCodesIndSpont)
+    selectedCodesEv = selectedCodes(~logical(selectedCodesIndSpont));
+    selectedCodesSpont = selectedCodes(logical(selectedCodesIndSpont));
+else %if codes classification has been modified
+    
+    selectedCodesIndSpontNew = sort(find(respMat == 2));
+    selectedCodesIndSpont = selectedCodesInd(goodCodes(logical(respMat == 2))) %%% ??? 
+end
 selectedCodesDepth = spikeClusterData.uniqueCodesRealDepth(ismember(spikeClusterData.uniqueCodes(:,1), selectedCodes));
 
 meanTrace = squeeze(mean(trace(:,selectedCodesInd,:),2));% compute mean over codes (good or selected)
@@ -333,7 +338,9 @@ save(filenameClusterTimeSeries, 'clusterTimeSeries')
 
 
 %%%%%%%%% change parameters here %%%%%%%%%
-% selectedCodesIndMuaUser = [8,31,71,81];%(1:numel(muaCodes)/2); % it will not be considered if it's empty or commented out
+selectedCodesIndMuaUser = (1:numel(muaCodes)/4); % it will not be considered if it's empty or commented out
+% [~,~,ib] = intersect([93,131,98,128],spikeClusterData.muaCodes); % insert in the array the mua codes from kilosort
+% selectedCodesIndMuaUser = ib';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if exist('selectedCodesIndMuaUser', 'var') && ~isempty(selectedCodesIndMuaUser) 
@@ -570,6 +577,10 @@ yl = ylim;
 h1 = line([optStimInterval(1) optStimInterval(1)],[0 yl(2)]); %max(h.Values) %max(sum(meanTrace(:,:),1))
 h2 = line([optStimInterval(2) optStimInterval(2)],[0 yl(2)]);
 set([h1 h2],'Color','c','LineWidth',1)% Set properties of lines
+for i = 1:size(x,1)
+    h3 = line('XData',x(i,:),'YData', [yl(2) yl(2)]); %line([-2.4 -2.2],[fact*max_hist2 fact*max_hist2]);
+    set(h3,'Color',[0.85 0.85 0.85] ,'LineWidth',4);% Set properties of lines
+end
 % patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1) ],[0 0 max(max(meanTrace(:,:))) max(max(meanTrace(:,:)))],'c', 'EdgeColor', 'none'); % Add a patch
 % set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
 
@@ -581,6 +592,10 @@ yl = ylim;
 h1 = line([optStimInterval(1) optStimInterval(1)],[0 yl(2)]); %max(h.Values) %max(sum(meanTrace(:,:),1))
 h2 = line([optStimInterval(2) optStimInterval(2)],[0 yl(2)]);
 set([h1 h2],'Color','c','LineWidth',1)% Set properties of lines
+for i = 1:size(x,1)
+    h3 = line('XData',x(i,:),'YData', [yl(2) yl(2)]); %line([-2.4 -2.2],[fact*max_hist2 fact*max_hist2]);
+    set(h3,'Color',[0.85 0.85 0.85] ,'LineWidth',4);% Set properties of lines
+end
 ax = gca;
 set(ax,'XLim',[plotBeg+bin plotEnd+bin],'FontSize',24);
 set(ax, 'TickDir', 'out');

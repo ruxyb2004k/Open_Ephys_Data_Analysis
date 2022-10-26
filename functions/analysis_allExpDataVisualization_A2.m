@@ -1,5 +1,7 @@
-%%% created by RB on 23.12.2020
+%%% created by RB on 09.11.2021
 %%% analysis for allExpDataVisualization_A2.m
+%%% modifications in comparison to the predvious version regarding
+%%% adjustBase
 disp('Running  analysis...')
 if sessionInfoAll.trialDuration == 18
     C = [[0 0 0]; [0 0 1];  [0.7 0.7 0.7]; [0 0.4470 0.7410]; [0 0 0]; [0.5 0.5 0.5]]; % black, navy-blue, grey, light blue, black, dark grey - traces
@@ -11,19 +13,26 @@ elseif sessionInfoAll.trialDuration == 6 || sessionInfoAll.trialDuration == 9
     end
     contrasts0 = [contrasts, 0];
 end
+
+
+mixed = sum(classUnitsAll(iUnitsFilt) == 1) & sum(classUnitsAll(iUnitsFilt) == 2); % 0 if only one cell type and 1 if both cell types are included in analysis
 %% Analysis for Fig. 1 (2x): average of timecourses 
 
 % Smooth trace frequency timecourses (TCs)
 smooth_param = 1;
+
 smoothTraceFreqAll = nan(totalConds, totalUnits, totalDatapoints);
 for cond = 1 : totalConds
-    for unit = find(iUnitsFilt)
+    for unit = find(iUnitsFilt)% & baseSelect)%
         smoothTraceFreqAll(cond,unit,:) = smooth(squeeze(clusterTimeSeriesAll.traceFreqGood(cond, unit, :)),smooth_param, smooth_method);
     end
 end
 
 % Calculate mean of smoothed trace frequency TCs
 meanTraceFreqAll = squeeze(nanmean(smoothTraceFreqAll,2));
+% subtract Vph - V
+smoothTraceFreqAllSubtr = squeeze((smoothTraceFreqAll(2,:,:)-smoothTraceFreqAll(1,:,:)));
+meanTraceFreqAllSubtr = nanmean(smoothTraceFreqAllSubtr,1);
 
 % Calculate STEM of frequency TCs over cells
 STEMtraceFreqAll = nan(totalConds, totalDatapoints);
@@ -33,23 +42,19 @@ for cond = 1 : totalConds
     end 
 end
 
+STEMtraceFreqAllSubtr = nan(1, totalDatapoints);
+for datapoint = 1:totalDatapoints
+    STEMtraceFreqAllSubtr(1, datapoint) = nanstd(smoothTraceFreqAllSubtr(:, datapoint))/sqrt(sum(~isnan(smoothTraceFreqAllSubtr(:, datapoint))));
+end 
+    
 
 %% Analysis for Fig. 2 (2x): average of normalized time courses
 % Baseline calculations  % dim: cond, unit, stim 
 baseStim = clusterTimeSeriesAll.baseTime; % [12 27 42 57 72 87] or [6, 12, 26];
-baseDuration = 1/bin-1; % additional data points for baseline quantification (1 sec)
-if longBase
-    if isequal(baseStim, [12 27 42 57 72 87]) %
-        baseDuration = 3/bin-1; % additional data points for baseline quantification (3 sec)
-    elseif isequal(baseStim, [6, 12, 26])
-        baseStim = [1, 12, 21];% modify baseStim to allow longer baseline quantification time
-        baseDuration = 2/bin-1; % additional data points for baseline quantification (2 sec)
-    elseif isequal(baseStim, [6, 12, 41])
-        baseStim = [1, 12, 36];% modify baseStim to allow longer baseline quantification time
-        baseDuration = 2/bin-1; % additional data points for baseline quantification (2 sec)
-    end
-end    
-       
+% baseDuration = 1/bin-1; % additional data points for baseline quantification (1 sec)
+
+% anaylze data as if having a longBase, in order to select for units with baseline above threshold
+[baseStim, baseDuration] = adjustBase(baseStim, bin, 1);  
 allStimBase = nan(totalConds, totalUnits, numel(baseStim));
 for cond = 1:totalConds
     for unit = find(iUnitsFilt)
@@ -58,7 +63,19 @@ for cond = 1:totalConds
         end
     end
 end
+baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; % select units with baseline higher than the selection threshold for 0%;
 
+if longBase == 0 % if analysis not intented for long baseline
+    [baseStim, baseDuration] = adjustBase(baseStim, bin, longBase);  % readjust baseStim and baseDuration for longBase = 0
+    allStimBase = nan(totalConds, totalUnits, numel(baseStim));
+    for cond = 1:totalConds
+        for unit = find(iUnitsFilt)
+            for stim = 1:numel(baseStim)
+                allStimBase(cond, unit, stim) = nanmean(clusterTimeSeriesAll.traceFreqGood(cond, unit, baseStim(stim):baseStim(stim)+baseDuration),3);
+            end
+        end
+    end
+end    
 
 
 traceFreqAllMinusBase = nan(totalConds, totalUnits, totalDatapoints);
@@ -82,22 +99,29 @@ maxTraceFreqAll = nan(totalConds, totalUnits);
 maxIndTraceFreqAll = nan(totalConds, totalUnits);
 smoothMaxTraceFreqAll = nan(totalConds, totalUnits);
 
-for cond = 1: totalConds-2
-    for unit = find(iUnitsFilt)
+for cond = 1: totalConds-2 
+    for unit = find(iUnitsFilt)%find(baseSelect)%
         [maxTraceFreqAll(cond, unit), maxIndTraceFreqAll(cond, unit)] = max(traceFreqAllMinusBase(cond, unit, searchMax));
         maxIndTraceFreqAll(cond, unit) = maxIndTraceFreqAll(cond, unit) + searchMax(1)-1;
+%         maxIndTraceFreqAll(cond, unit) = searchMax(2); % select the values in the middle of the searchMax interval as max index
         %             smoothMaxTraceFreqAll(cond, unit) = mean(mean(traceFreqAllMinusBase(cond, unit, maxIndTraceFreqAll(cond, unit)-1:maxIndTraceFreqAll(cond,unit)+1))); % smooth over 3 points
-        smoothMaxTraceFreqAll(cond, unit) = mean(traceFreqAllMinusBase(cond, unit, maxIndTraceFreqAll(cond, unit))); % just max
+%         smoothMaxTraceFreqAll(cond, unit) = mean(traceFreqAllMinusBase(cond, unit, maxIndTraceFreqAll(cond, unit))); % just max  or %:maxIndTraceFreqAll(cond, unit)+2
+        smoothMaxTraceFreqAll(cond, unit) = mean(traceFreqAllMinusBase(cond, unit, searchMax)); % just max  or %:maxIndTraceFreqAll(cond, unit)+2
+
     end
 end
 
+% amplSelect = smoothMaxTraceFreqAll(1, :) > 0 & smoothMaxTraceFreqAll(1, :) > 0; % select only units with amplitude >0
+
 
 % normalize >0% vis. stim. to max (without photostim) (or smoothMax) and then smooth
-smooth_param = 1;
+smooth_param = 1; 
 normTraceFreqAll = nan(totalConds,totalUnits, totalDatapoints);
-for cond = 1:totalConds-2
+normTraceFreqAll100 = nan(totalConds,totalUnits, totalDatapoints);
+for cond = 1:totalConds %%%%
     condNorm = floor((cond+1)/2)*2-1; % normalized by the non-photostim condition
-    for unit = find(iUnitsFilt)
+    for unit = find(baseSelect)%find(iUnitsFilt)%find(amplSelect)%f
+%     for unit = find(baseSelect)%find(amplSelect)%
 %         normTraceFreqAll(cond, unit, :) = smooth(traceFreqAllMinusBase(cond, unit, :)/maxTraceFreqAll(condNorm, unit),smooth_param, smooth_method);
         normTraceFreqAll(cond, unit, :) = smooth(traceFreqAllMinusBase(cond, unit, :)/smoothMaxTraceFreqAll(condNorm, unit),smooth_param, smooth_method);
         normTraceFreqAll100(cond, unit, :) = smooth(traceFreqAllMinusBase(cond, unit, :)/smoothMaxTraceFreqAll(1, unit),smooth_param, smooth_method);
@@ -105,10 +129,11 @@ for cond = 1:totalConds-2
 end
 
 % normalize 0% vis stim to baseline (without photostim) and then smooth
-
+if longBase == 1
+    smooth_param = 3;% !! modify here !!
+end
 % thresholdFreq = 0.1 % selection threshold in Hz
-baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; % select units with baseline higher than the selection threshold for 0%;
-totalBaseSelectUnits = numel(find(baseSelect))
+% totalBaseSelectUnits = numel(find(baseSelect))
 for cond = totalConds-1:totalConds
     for unit = find(baseSelect)
         normTraceFreqAll(cond, unit, :) = smooth(clusterTimeSeriesAll.traceFreqGood(cond, unit, :)/allStimBase(totalConds-1, unit,1),smooth_param, smooth_method);
@@ -117,20 +142,61 @@ for cond = totalConds-1:totalConds
 end
 
 % Calculate mean of smoothed and norm TCs
-for cond = 1:totalConds
+% for cond = 1:totalConds
     meanNormTraceFreqAll = squeeze(nanmean(normTraceFreqAll,2));
     meanNormTraceFreqAll100 = squeeze(nanmean(normTraceFreqAll100,2));
+% end    
+
+
+% Correction for the peak not being at 1
+% normTraceFreqAllAdj = nan(size(normTraceFreqAll));
+% meanNormTraceFreqAllAdj = nan(size(meanNormTraceFreqAll));
+normTraceFreqAllAdj = normTraceFreqAll; % copying to already contain the spont conds, which will not be adjusted
+meanNormTraceFreqAllAdj = meanNormTraceFreqAll;% copying to already contain the spont conds, which will not be adjusted
+for cond = 1:totalConds-2 
+    condNorm = floor((cond+1)/2)*2-1; % normalized by the non-photostim condition
+    corrF = max(meanNormTraceFreqAll(condNorm,searchMax));
+    for unit = find(iUnitsFilt)%find(amplSelect)%
+        normTraceFreqAllAdj(cond, unit, :) = normTraceFreqAll(cond, unit, :) / corrF;
+    end
+    meanNormTraceFreqAllAdj(cond, :) = squeeze(nanmean(normTraceFreqAllAdj(cond,:,:),2));
 end    
+
+%subtract Vph-V and Sph-S
+normTraceFreqAllAdjSubtr = nan(totalConds/2, totalUnits, totalDatapoints);
+for cond =1:2:totalConds
+    normTraceFreqAllAdjSubtr((cond+1)/2,:,:) = squeeze(normTraceFreqAllAdj(cond+1, :, :) - normTraceFreqAllAdj(cond, :, :)); 
+end
+meanNormTraceFreqAllAdjSubtr = squeeze(nanmean(normTraceFreqAllAdjSubtr,2));
+
+normTraceFreqAll100Adj = nan(size(normTraceFreqAll100));
+corrF = max(meanNormTraceFreqAll100(1,searchMax));
+for cond = 1:totalConds %%%%
+    for unit = find(iUnitsFilt)%find(amplSelect)%
+        normTraceFreqAll100Adj(cond, unit, :) = normTraceFreqAll100(cond, unit, :) / corrF; % corrected here, 100 was missing
+    end
+    meanNormTraceFreqAll100Adj(cond, :) = squeeze(nanmean(normTraceFreqAll100Adj(cond,:,:),2));% corrected here, 100 was missing
+end
 
 % Calculate STEM of TCs over cells
 STEMnormTraceFreqAll = nan(totalConds, totalDatapoints);
+STEMnormTraceFreqAllAdj = nan(totalConds, totalDatapoints);
 for cond = 1:totalConds
     for datapoint = 1:totalDatapoints
         STEMnormTraceFreqAll(cond, datapoint) = nanstd(normTraceFreqAll(cond,:,datapoint))/sqrt(sum(~isnan(normTraceFreqAll(cond, :,datapoint))));
         STEMnormTraceFreqAll100(cond, datapoint) = nanstd(normTraceFreqAll100(cond,:,datapoint))/sqrt(sum(~isnan(normTraceFreqAll100(cond, :,datapoint))));
+        STEMnormTraceFreqAllAdj(cond, datapoint) = nanstd(normTraceFreqAllAdj(cond,:,datapoint))/sqrt(sum(~isnan(normTraceFreqAllAdj(cond, :,datapoint))));
+        STEMnormTraceFreqAll100Adj(cond, datapoint) = nanstd(normTraceFreqAll100Adj(cond,:,datapoint))/sqrt(sum(~isnan(normTraceFreqAll100Adj(cond, :,datapoint))));
+
     end    
 end
 
+STEMnormTraceFreqAllAdjSubtr = nan(1, totalDatapoints);
+for cond =1:totalConds/2
+    for datapoint = 1:totalDatapoints
+        STEMnormTraceFreqAllAdjSubtr(cond, datapoint) = nanstd(normTraceFreqAllAdjSubtr(cond,:,datapoint))/sqrt(sum(~isnan(normTraceFreqAllAdjSubtr(cond,:,datapoint))));
+    end
+end
 
 %% Analysis Fig. 3 (2x): Baseline quantification
 
@@ -162,13 +228,13 @@ normAllStimBase = nan(totalConds, totalUnits, totalStim);
 allStimBaseNormTrace = nan(totalConds, totalUnits, numel(baseStim));
 
 % thresholdFreq = 0.5 % selection threshold in Hz
-baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; % select units with baseline higher than the selection threshold for 0%;
+% baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; % select units with baseline higher than the selection threshold for 0%;
 totalBaseSelectUnits = numel(find(baseSelect));
 for cond = 1:totalConds
     for unit = find(baseSelect)
         for stim = 1:numel(baseStim)            
             if allStimBase(cond, unit, 1) ~=0
-                normAllStimBase(cond, unit, stim) = allStimBase(cond, unit, stim)/allStimBase(cond, unit, 1)-1;  
+                normAllStimBase(cond, unit, stim) = allStimBase(cond, unit, stim)/allStimBase(cond, unit, 1);  
             else     
                 normAllStimBase(cond, unit, stim) = NaN;
             end
@@ -203,11 +269,11 @@ end
 
 % calculare max in each timecourse of each cell, for conds with evoked activity
 if sessionInfoAll.trialDuration == 18
-    amplInt = [18 18]; % in data points
+    amplInt = [18:18]; % in data points
 elseif sessionInfoAll.trialDuration == 6
-    amplInt = [31 33];
+    amplInt = [31:33];
 elseif sessionInfoAll.trialDuration == 9
-    amplInt = [46 48];
+    amplInt = [46:48];
 end
 
 allStimAmpl = nan(totalConds, totalUnits, totalStim);
@@ -216,9 +282,9 @@ allStimAmplNormTrace100 = nan(totalConds, totalUnits);
 for cond = 1:totalConds
     for unit = find(iUnitsFilt)
         for stim = 1:totalStim % 2 calculations: hz values and normalized values
-            allStimAmpl(cond, unit, stim) = nanmean(clusterTimeSeriesAll.traceFreqGood(cond, unit, (stim-1)*(3/bin)+amplInt(1):(stim-1)*(3/bin)+amplInt(2)),3);
-            allStimAmplNormTrace(cond, unit, stim) = nanmean(normTraceFreqAll(cond, unit, (stim-1)*(3/bin)+amplInt(1):(stim-1)*(3/bin)+amplInt(2)),3);
-            allStimAmplNormTrace100(cond, unit) = nanmean(normTraceFreqAll100(cond, unit, (stim-1)*(3/bin)+amplInt(1):(stim-1)*(3/bin)+amplInt(2)),3);
+            allStimAmpl(cond, unit, stim) = nanmean(clusterTimeSeriesAll.traceFreqGood(cond, unit, (stim-1)*(3/bin)+amplInt),3);
+            allStimAmplNormTrace(cond, unit, stim) = nanmean(normTraceFreqAll(cond, unit, (stim-1)*(3/bin)+amplInt),3);
+            allStimAmplNormTrace100(cond, unit) = nanmean(normTraceFreqAll100(cond, unit, (stim-1)*(3/bin)+amplInt),3);
         end
     end
 end
@@ -286,7 +352,7 @@ end
 %%%%% !!!! needs double checking !!!! %%%%%%
 % Normalized amplitude calculations : select first line or the next ones 
 if totalStim ==6
-    normAllStimAmpl100 = allStimAmplNormTrace; % normalize to first stim in the same non-photostim cond
+    normAllStimAmpl100 = allStimAmplNormTrace.*(isfinite(allStimAmplNormTrace)); % normalize to first stim in the same non-photostim cond
 elseif totalStim == 1
     normAllStimAmpl100 = allStimAmplNormTrace100;
 end    
@@ -327,15 +393,20 @@ end
 
 ratioAllStimBase = nan(totalConds/2, totalUnits, numel(baseStim));
 OIndexAllStimBase = nan(totalConds/2, totalUnits, numel(baseStim));
+OIvalues = -1:.1:1; % OI values
 
 for cond = 1:2:totalConds
-    for unit = find(iUnitsFilt)
+    for unit = find(iUnitsFilt)%find(baseSelect)%
         for stim = 1:numel(baseStim)
             if allStimBase(cond, unit, stim) ~= 0
                 ratioAllStimBase((cond+1)/2, unit, stim) = allStimBase(cond+1, unit, stim)/allStimBase(cond, unit, stim); 
             end
             if (allStimBase(cond+1, unit, stim)+allStimBase(cond, unit, stim)) ~= 0
-                OIndexAllStimBase((cond+1)/2, unit, stim) = (allStimBase(cond+1, unit, stim)-allStimBase(cond, unit, stim))/(allStimBase(cond+1, unit, stim)+allStimBase(cond, unit, stim));   
+                if cond < totalConds-2
+                    OIndexAllStimBase((cond+1)/2, unit, stim) = (allStimBase(cond+1, unit, stim)-allStimBase(cond, unit, stim))/(allStimBase(cond+1, unit, stim)+allStimBase(cond, unit, stim));
+                else
+                    OIndexAllStimBase((cond+1)/2, unit, stim) = (allStimBase(cond+1, unit, stim)-allStimBase(cond+1, unit, 1))/(allStimBase(cond+1, unit, stim)+allStimBase(cond+1, unit, 1));   
+                end    
             end    
         end        
     end
@@ -354,16 +425,40 @@ sortOIndexAllStimBase = nan(totalConds/2, totalUnits, numel(baseStim));
 indexRatioNormAllStimBase = nan(totalConds/2, totalUnits, numel(baseStim));
 indexOIndexAllStimBase = nan(totalConds/2, totalUnits, numel(baseStim));
 
+meanOIndexAllStimBase = squeeze(nanmean(OIndexAllStimBase,2));
+meanOIndexAllStimBaseExc = squeeze(nanmean(OIndexAllStimBase(:,classUnitsAll == 1,:),2));
+meanOIndexAllStimBaseInh = squeeze(nanmean(OIndexAllStimBase(:,classUnitsAll == 2,:),2));
+
+sigmaOIndexAllStimBase = nan(totalConds/2,numel(baseStim));
+sigmaOIndexAllStimBaseExc = nan(totalConds/2,numel(baseStim));
+sigmaOIndexAllStimBaseInh = nan(totalConds/2,numel(baseStim));
+
+distOIndexAllStimBase = nan(totalConds/2,numel(baseStim), numel(OIvalues));
+distOIndexAllStimBaseExc = nan(totalConds/2,numel(baseStim), numel(OIvalues));
+distOIndexAllStimBaseInh = nan(totalConds/2,numel(baseStim), numel(OIvalues));
+
+
 for cond = 1:2:totalConds
     for stim = 2:numel(baseStim)
         [sortRatioNormAllStimBase((cond+1)/2,:, stim), indexRatioNormAllStimBase((cond+1)/2,:, stim)] = sort(ratioNormAllStimBase((cond+1)/2,:, stim));
         [sortOIndexAllStimBase((cond+1)/2,:, stim), indexOIndexAllStimBase((cond+1)/2,:, stim)] = sort(OIndexAllStimBase((cond+1)/2,:, stim));
+        if mixed
+            sigmaOIndexAllStimBase((cond+1)/2, stim) = nanstd(OIndexAllStimBase((cond+1)/2,:, stim));
+            sigmaOIndexAllStimBaseExc((cond+1)/2, stim) = nanstd(OIndexAllStimBase((cond+1)/2,classUnitsAll == 1,stim));
+            sigmaOIndexAllStimBaseInh((cond+1)/2, stim) = nanstd(OIndexAllStimBase((cond+1)/2,classUnitsAll == 2, stim));
+            
+            pdOIndexAllStimBase((cond+1)/2, stim) = makedist('Normal','mu',meanOIndexAllStimBase((cond+1)/2, stim),'sigma',sigmaOIndexAllStimBase((cond+1)/2, stim));
+            pdOIndexAllStimBaseExc((cond+1)/2, stim) = makedist('Normal','mu',meanOIndexAllStimBaseExc((cond+1)/2, stim),'sigma',sigmaOIndexAllStimBaseExc((cond+1)/2, stim));
+            pdOIndexAllStimBaseInh((cond+1)/2, stim) = makedist('Normal','mu',meanOIndexAllStimBaseInh((cond+1)/2, stim),'sigma',sigmaOIndexAllStimBaseInh((cond+1)/2, stim));
+            
+            distOIndexAllStimBase((cond+1)/2, stim,:) = pdf(pdOIndexAllStimBase((cond+1)/2, stim),OIvalues);
+            distOIndexAllStimBaseExc((cond+1)/2, stim,:) = pdf(pdOIndexAllStimBaseExc((cond+1)/2, stim),OIvalues);
+            distOIndexAllStimBaseInh((cond+1)/2, stim,:) = pdf(pdOIndexAllStimBaseInh((cond+1)/2, stim),OIvalues);
+            [hOIndexAllStimBaseExcInh((cond+1)/2, stim), pOIndexAllStimBaseExcInh((cond+1)/2, stim)] = kstest2(squeeze(OIndexAllStimBase((cond+1)/2,classUnitsAll == 1, stim)),squeeze(OIndexAllStimBase((cond+1)/2,classUnitsAll == 2, stim)));
+        end
     end
 end
 
-meanOIndexAllStimBase = squeeze(nanmean(OIndexAllStimBase,2));
-meanOIndexAllStimBaseExc = squeeze(nanmean(OIndexAllStimBase(:,classUnitsAll == 1,:),2));
-meanOIndexAllStimBaseInh = squeeze(nanmean(OIndexAllStimBase(:,classUnitsAll == 2,:),2));
 
 STEMOIndexAllStimBase = nan(totalConds/2, numel(baseStim));
 STEMOIndexAllStimBaseExc = nan(totalConds/2, numel(baseStim));
@@ -396,6 +491,30 @@ end
 
 pSuaBaseAll = clusterTimeSeriesAll.statsSua.pSuaBase;
 
+for cond = 1:2:totalConds % fig 7dx
+    for stim = 2:numel(baseStim)
+        if mixed
+            %         OIndexAllStimBase((cond+1)/2,classUnitsAll == 1, stim)), OIndexAllStimBase((cond+1)/2,classUnitsAll == 2, stim))
+            [hOIndexAllStimBaseExc((cond+1)/2, stim), pOIndexAllStimBaseExc((cond+1)/2, stim)] =ttest(OIndexAllStimBase((cond+1)/2,classUnitsAll == 1, stim)); % opt vs vis
+            [pOIndexAllStimBaseExcW((cond+1)/2, stim), hOIndexAllStimBaseExcW((cond+1)/2, stim)] =signrank(OIndexAllStimBase((cond+1)/2,classUnitsAll == 1, stim)); %  opt vs vis
+            [hOIndexAllStimBaseInh((cond+1)/2, stim), pOIndexAllStimBaseInh((cond+1)/2, stim)] =ttest(OIndexAllStimBase((cond+1)/2,classUnitsAll == 2, stim)); % opt vs vis
+            [pOIndexAllStimBaseInhW((cond+1)/2, stim), hOIndexAllStimBaseInhW((cond+1)/2, stim)] =signrank(OIndexAllStimBase((cond+1)/2,classUnitsAll == 2, stim)); %  opt vs vis
+            [hOIndexAllStimBaseExcInh2((cond+1)/2, stim), pOIndexAllStimBaseExcInh2((cond+1)/2, stim)] =ttest2(OIndexAllStimBase((cond+1)/2,classUnitsAll == 1, stim), OIndexAllStimBase((cond+1)/2,classUnitsAll == 2, stim)); % opt vs vis
+            %         [pOIndexAllStimBaseExcInh2W((cond+1)/2, stim), hOIndexAllStimBaseExcInh2W((cond+1)/2, stim)] =signrank(OIndexAllStimBase((cond+1)/2,classUnitsAll == 1, stim), OIndexAllStimBase((cond+1)/2,classUnitsAll == 2, stim)); %  opt vs vis
+        end
+        
+    end
+end
+
+OIposUnits = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 4)>0; % run the next section before uncommenting this line
+OInegUnits = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 4)<0; % run the next section before uncommenting this line
+
+if longBase 
+    path1 =pwd;
+    filenameOIposnegUnits = fullfile(path1,'OIposnegUnits.mat');
+    disp('Saving OIposneg.mat')
+    save(filenameOIposnegUnits, 'OIposUnits', 'OInegUnits')
+end
 
 
 %% Analysis Fig. 9, 10 - Opto-index and ratio of amplitudes in photostim vs non-photostim. conditions
@@ -424,14 +543,40 @@ sortRatioNormAllStimAmpl = nan(totalConds/2, totalUnits, totalStim);
 sortOIndexAllStimAmpl = nan(totalConds/2, totalUnits, totalStim);
 indexRatioNormAllStimAmpl = nan(totalConds/2, totalUnits, totalStim);
 indexOIndexAllStimAmpl = nan(totalConds/2, totalUnits, totalStim);
+
+meanOIndexAllStimAmpl = nanmean(OIndexAllStimAmpl,2);
+meanOIndexAllStimAmplExc = squeeze(nanmean(OIndexAllStimAmpl(:,classUnitsAll == 1,:),2));
+meanOIndexAllStimAmplInh = squeeze(nanmean(OIndexAllStimAmpl(:,classUnitsAll == 2,:),2));
+
+sigmaOIndexAllStimAmpl = nan(totalConds/2,numel(totalStim));
+sigmaOIndexAllStimAmplExc = nan(totalConds/2,numel(totalStim));
+sigmaOIndexAllStimAmplInh = nan(totalConds/2,numel(totalStim));
+
+distOIndexAllStimAmpl = nan(totalConds/2,numel(totalStim), numel(OIvalues));
+distOIndexAllStimAmplExc = nan(totalConds/2,numel(totalStim), numel(OIvalues));
+distOIndexAllStimAmplInh = nan(totalConds/2,numel(totalStim), numel(OIvalues));
+
 for cond = 1:2:totalConds
     for stim = 1:totalStim
         [sortRatioNormAllStimAmpl((cond+1)/2,:,stim), indexRatioNormAllStimAmpl((cond+1)/2,:,stim)] = sort(ratioNormAllStimAmpl((cond+1)/2,:,stim));
         [sortOIndexAllStimAmpl((cond+1)/2,:,stim), indexOIndexAllStimAmpl((cond+1)/2,:,stim)] = sort(OIndexAllStimAmpl((cond+1)/2,:,stim));
+        if mixed
+            sigmaOIndexAllStimAmpl((cond+1)/2, stim) = nanstd(OIndexAllStimAmpl((cond+1)/2,:, stim));
+            sigmaOIndexAllStimAmplExc((cond+1)/2, stim) = nanstd(OIndexAllStimAmpl((cond+1)/2,classUnitsAll == 1,stim));
+            sigmaOIndexAllStimAmplInh((cond+1)/2, stim) = nanstd(OIndexAllStimAmpl((cond+1)/2,classUnitsAll == 2, stim));
+            
+            pdOIndexAllStimAmpl((cond+1)/2, stim) = makedist('Normal','mu',meanOIndexAllStimAmpl((cond+1)/2, stim),'sigma',sigmaOIndexAllStimAmpl((cond+1)/2, stim));
+            pdOIndexAllStimAmplExc((cond+1)/2, stim) = makedist('Normal','mu',meanOIndexAllStimAmplExc((cond+1)/2, stim),'sigma',sigmaOIndexAllStimAmplExc((cond+1)/2, stim));
+            pdOIndexAllStimAmplInh((cond+1)/2, stim) = makedist('Normal','mu',meanOIndexAllStimAmplInh((cond+1)/2, stim),'sigma',sigmaOIndexAllStimAmplInh((cond+1)/2, stim));
+            
+            distOIndexAllStimAmpl((cond+1)/2, stim,:) = pdf(pdOIndexAllStimAmpl((cond+1)/2, stim),OIvalues);
+            distOIndexAllStimAmplExc((cond+1)/2, stim,:) = pdf(pdOIndexAllStimAmplExc((cond+1)/2, stim),OIvalues);
+            distOIndexAllStimAmplInh((cond+1)/2, stim,:) = pdf(pdOIndexAllStimAmplInh((cond+1)/2, stim),OIvalues);
+            [hOIndexAllStimAmplExcInh((cond+1)/2, stim), pOIndexAllStimAmplExcInh((cond+1)/2, stim)] = kstest2(squeeze(OIndexAllStimAmpl((cond+1)/2,classUnitsAll == 1, stim)),squeeze(OIndexAllStimAmpl((cond+1)/2,classUnitsAll == 2, stim)));
+        end
     end
 end
 
-meanOIndexAllStimAmpl = nanmean(OIndexAllStimAmpl,2);
 
 for cond = 1:totalConds/2  
     for stim = 1:totalStim
@@ -452,7 +597,9 @@ end
 pSuaAll =  clusterTimeSeriesAll.statsSua.pSua;
 
 %% Analysis Fig. 11, 12 - Opto-index and ratio of baselines in photostim vs non-photostim. conditions, combined conditions and relative to the same trial and cond
-% 
+% !!! check out baseSelect in this section - it is different than in other
+% sections. Check for inconsistencies
+
 % totalUnits = size(allStimBase, 2);
 % totalStim = size(allStimBase, 3);
 
@@ -462,9 +609,9 @@ allStimBaseComb(1,1:totalUnits,1:numel(baseStim)) = nanmean(allStimBase(1:2:tota
 allStimBaseComb(2,1:totalUnits,1:numel(baseStim)) = nanmean(allStimBase(2:2:totalConds,:,:),1); % with photostim
 
 % thresholdFreq = 0.1; % selection threshold in Hz
-baseSelect = allStimBaseComb >= thresholdFreq ; % select units with baseline higher than the selection threshold; 2 conds, unit, 3 stim
+baseSelectComb = allStimBaseComb >= thresholdFreq ; % select units with baseline higher than the selection threshold; 2 conds, unit, 3 stim
 units = (1:totalUnits); 
-baseSelectUnits = units(baseSelect(2,:,1)); % 
+baseSelectUnits = units(baseSelectComb(2,:,1)); % 
 totalBaseSelectUnits = numel(baseSelectUnits);
 
 ratioAllStimBaseComb = nan(2, totalUnits, numel(baseStim));% totalUnits, stim no.
@@ -498,16 +645,39 @@ sortOIndexAllStimBaseComb=nan(2, totalUnits, numel(baseStim));
 indexRatioNormAllStimBaseComb = nan(2, totalUnits, numel(baseStim));
 indexOIndexAllStimBaseComb = nan(2, totalUnits, numel(baseStim));
 
+meanOIndexAllStimBaseComb = squeeze(nanmean(OIndexAllStimBaseComb,2)); % with photostim
+meanOIndexAllStimBaseCombExc = squeeze(nanmean(OIndexAllStimBaseComb(:,classUnitsAll(baseSelectUnits) == 1,:),2));
+meanOIndexAllStimBaseCombInh = squeeze(nanmean(OIndexAllStimBaseComb(:,classUnitsAll(baseSelectUnits) == 2,:),2)); 
+
+sigmaOIndexAllStimBaseComb = nan(2,numel(baseStim));
+sigmaOIndexAllStimBaseCombExc = nan(2,numel(baseStim));
+sigmaOIndexAllStimBaseCombInh = nan(2,numel(baseStim));
+
+distOIndexAllStimBaseComb = nan(2,numel(baseStim), numel(OIvalues));
+distOIndexAllStimBaseCombExc = nan(2,numel(baseStim), numel(OIvalues));
+distOIndexAllStimBaseCombInh = nan(2,numel(baseStim), numel(OIvalues));
+
 for cond = 1:2
     for stim = 2:numel(baseStim)
         [sortRatioNormAllStimBaseComb(cond,:, stim), indexRatioNormAllStimBaseComb(cond,:, stim)] = sort(ratioNormAllStimBaseComb(cond,:, stim));
         [sortOIndexAllStimBaseComb(cond,:, stim), indexOIndexAllStimBaseComb(cond,:, stim)] = sort(OIndexAllStimBaseComb(cond,:, stim));
+        if mixed
+            sigmaOIndexAllStimBaseComb(cond, stim) = nanstd(OIndexAllStimBaseComb(cond,:, stim));
+            sigmaOIndexAllStimBaseCombExc(cond, stim) = nanstd(OIndexAllStimBaseComb(cond,classUnitsAll == 1,stim));
+            sigmaOIndexAllStimBaseCombInh(cond, stim) = nanstd(OIndexAllStimBaseComb(cond,classUnitsAll == 2, stim));
+            
+            pdOIndexAllStimBaseComb(cond, stim) = makedist('Normal','mu',meanOIndexAllStimBaseComb(cond, stim),'sigma',sigmaOIndexAllStimBaseComb(cond, stim));
+            pdOIndexAllStimBaseCombExc(cond, stim) = makedist('Normal','mu',meanOIndexAllStimBaseCombExc(cond, stim),'sigma',sigmaOIndexAllStimBaseCombExc(cond, stim));
+            pdOIndexAllStimBaseCombInh(cond, stim) = makedist('Normal','mu',meanOIndexAllStimBaseCombInh(cond, stim),'sigma',sigmaOIndexAllStimBaseCombInh(cond, stim));
+            
+            distOIndexAllStimBaseComb(cond, stim,:) = pdf(pdOIndexAllStimBaseComb(cond, stim),OIvalues);
+            distOIndexAllStimBaseCombExc(cond, stim,:) = pdf(pdOIndexAllStimBaseCombExc(cond, stim),OIvalues);
+            distOIndexAllStimBaseCombInh(cond, stim,:) = pdf(pdOIndexAllStimBaseCombInh(cond, stim),OIvalues);
+            [hOIndexAllStimBaseCombExcInh(cond, stim), pOIndexAllStimBaseCombExcInh(cond, stim)] = kstest2(squeeze(OIndexAllStimBaseComb(cond,classUnitsAll == 1, stim)),squeeze(OIndexAllStimBaseComb(cond,classUnitsAll == 2, stim)));
+        end       
     end
 end
 
-meanOIndexAllStimBaseComb = squeeze(nanmean(OIndexAllStimBaseComb,2)); % with photostim
-meanOIndexAllStimBaseCombExc = squeeze(nanmean(OIndexAllStimBaseComb(:,classUnitsAll(baseSelectUnits) == 1,:),2));
-meanOIndexAllStimBaseCombInh = squeeze(nanmean(OIndexAllStimBaseComb(:,classUnitsAll(baseSelectUnits) == 2,:),2)); 
 
 STEMOIndexAllStimBaseComb = nan(2, totalStim);
 STEMOIndexAllStimBaseCombExc = nan(2, totalStim);
@@ -902,7 +1072,26 @@ end
 
 allStimMagn = allStimAmpl-allStimBase;
 
-baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; 
+meanAllStimMagn = nanmean(allStimMagn,2);
+
+STEMallStimMagn = nan(totalConds, totalStim);
+for cond = 1:totalConds
+    for stim = 1:totalStim
+        STEMallStimMagn(cond, stim) = nanstd(allStimMagn(cond,:,stim))/sqrt(sum(~isnan(allStimMagn(cond, :,stim))));        
+    end
+end
+
+for cond = (1:2:totalConds)
+    for stim = 1:totalStim
+        [hAllStimMagn((cond+1)/2, stim), pAllStimMagn((cond+1)/2, stim)] =ttest(allStimMagn(cond,:, stim),allStimMagn(cond+1,:, stim)); % opt vs vis
+        [pAllStimMagn((cond+1)/2, stim), hAllStimMagn((cond+1)/2, stim)] =signrank(allStimMagn(cond,:, stim),allStimMagn(cond+1,:, stim)); %  opt vs vis
+    end   
+end
+
+
+% calculate magnitude as V-Vph
+
+% baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; 
 magnCondDiff = nan(totalConds-2, totalUnits, totalDatapoints);
 for cond = 1:totalConds-2
     for unit = find(iUnitsFilt & baseSelect)
@@ -910,11 +1099,14 @@ for cond = 1:totalConds-2
         magnCondDiff(cond, unit, :) = smoothTraceFreqAll(cond, unit,:)-smoothTraceFreqAll(totalConds-mod(cond,2), unit,:);
     end
 end
+
+
 meanMagnCondDiff = nanmean(magnCondDiff,2);
 
-% Calculate STEM of TCs over cells
-STEMmagnCondDiff = nan(totalConds-2, totalDatapoints);
 
+% Calculate STEM of TCs over cells
+
+STEMmagnCondDiff = nan(totalConds-2, totalDatapoints);
 for cond = 1:totalConds-2
     for datapoint = 1:totalDatapoints
         STEMmagnCondDiff(cond, datapoint) = nanstd(magnCondDiff(cond,:,datapoint))/sqrt(sum(~isnan(magnCondDiff(cond, :,datapoint))));        
@@ -976,22 +1168,13 @@ for cond = 1:totalConds-2
 end
 
 %% Analysis Fig. 24 : Magnitude (evoked - spont trace) quantification (under construction!!! - no figure for this script yet)
-if longBase == 1
-    disp('longBase = 0, overwritten for fig 24')
-    longBase = 0;
-end    
+
+disp('For fig 24 and onwards, baseStim and baseDuration modified as for longBase = 0')
+   
 
 % Baseline calculations  % dim: cond, unit, stim 
 baseStim = clusterTimeSeriesAll.baseTime; % [12 27 42 57 72 87] or [6, 12, 26];
 baseDuration = 1/bin-1; % additional data points for baseline quantification (1 sec)
-% if longBase
-%     if isequal(baseStim, [12 27 42 57 72 87]) %
-%         baseDuration = 3/bin-1; % additional data points for baseline quantification (3 sec)
-%     elseif isequal(baseStim, [6, 12, 26])
-%         baseStim = [1, 12, 21];% modify baseStim to allow longer baseline quantification time
-%         baseDuration = 2/bin-1; % additional data points for baseline quantification (2 sec)
-%     end
-% end    
        
 allStimBaseMagnCondDiff = nan(totalConds-2, totalUnits, numel(baseStim));
 for cond = 1:totalConds-2
@@ -1004,11 +1187,11 @@ end
 
 % calculare max in each timecourse of each cell, for conds with evoked activity
 if sessionInfoAll.trialDuration == 18
-    amplInt = [17 19]; % in data points 
+    amplInt = [17:19]; % in data points 
 elseif sessionInfoAll.trialDuration == 6
-    amplInt = [31 33];
+    amplInt = [31:33];
 elseif sessionInfoAll.trialDuration == 9
-    amplInt = [46 48];
+    amplInt = [46:48];
 end
 
 allStimAmplMagnCondDiff = nan(totalConds-2, totalUnits, totalStim);
@@ -1016,7 +1199,7 @@ allStimAmplMagnCondDiff = nan(totalConds-2, totalUnits, totalStim);
 for cond = 1:totalConds-2
     for unit = find(iUnitsFilt & baseSelect)
         for stim = 1:totalStim % 2 calculations: hz values and normalized values
-            allStimAmplMagnCondDiff(cond, unit, stim) = nanmean(magnCondDiff(cond, unit, (stim-1)*(3/bin)+amplInt(1):(stim-1)*(3/bin)+amplInt(2)),3);
+            allStimAmplMagnCondDiff(cond, unit, stim) = nanmean(magnCondDiff(cond, unit, (stim-1)*(3/bin)+amplInt),3);
         end
     end
 end
@@ -1093,7 +1276,7 @@ end
 
 tracesBaseSubtr = nan(size(traces));
 for cond = 1:2*totalConds-2
-    for unit = find(iUnitsFilt)
+    for unit = find(iUnitsFilt & baseSelect)
         tracesBaseSubtr(cond, unit, :) = traces(cond, unit, :) - allStimBaseTraces(cond,unit,1);
     end
 end    
@@ -1119,7 +1302,7 @@ for cond = 1: 2*totalConds-2
         [maxTracesBaseSubtr(cond, unit), maxIndTracesBaseSubtr(cond, unit)] = max(tracesBaseSubtr(cond, unit, searchMax));
         maxIndTracesBaseSubtr(cond, unit) = maxIndTracesBaseSubtr(cond, unit) + searchMax(1)-1;
 %         smoothMaxTracesBaseSubtr(cond, unit) = mean(tracesBaseSubtr(cond, unit, maxIndTracesBaseSubtr(1, unit))); % just max, 1st condition
-         smoothMaxTracesBaseSubtr(cond, unit) = mean(tracesBaseSubtr(cond, unit, searchMax)); % mean across interval
+         smoothMaxTracesBaseSubtr(cond, unit) = mean(tracesBaseSubtr(cond, unit, searchMax),3); % mean across interval
 
     end
 end
@@ -1182,11 +1365,11 @@ end
 % analysis for Fig 26d - reproduction of fig 8di(2) from eLife 2020 (average amplitude of normalized and baseline subtr traces)
 
 if sessionInfoAll.trialDuration == 18
-    amplInt = [17 19]; % in data points [17 18] % as long as these are the same with searchMax, the amplitude in the conditions for normalization will be 1
+    amplInt = [17:19]; % in data points [17 18] % as long as these are the same with searchMax, the amplitude in the conditions for normalization will be 1
 elseif sessionInfoAll.trialDuration == 6
-    amplInt = [31 33];% [31 32]
+    amplInt = [31:33];% [31 32]
 elseif sessionInfoAll.trialDuration == 9
-    amplInt = [46 48];% [46 48]
+    amplInt = [46:48];% [46 48]
 end
 
 allStimAmplNormTracesBaseSubtr = nan(2*totalConds-2, totalUnits, totalStim);
@@ -1195,8 +1378,8 @@ allStimAmplNormTracesBaseSubtr100 = nan(2*totalConds-2, totalUnits, totalStim);
 for cond = 1:2*totalConds-2
     for unit = find(iUnitsFilt & baseSelect)  
         for stim = 1:totalStim 
-            allStimAmplNormTracesBaseSubtr(cond, unit, stim) = nanmean(normTracesBaseSubtr(cond, unit, (stim-1)*(3/bin)+amplInt(1):(stim-1)*(3/bin)+amplInt(2)),3);
-            allStimAmplNormTracesBaseSubtr100(cond, unit, stim) = nanmean(normTracesBaseSubtr100(cond, unit, (stim-1)*(3/bin)+amplInt(1):(stim-1)*(3/bin)+amplInt(2)),3);
+            allStimAmplNormTracesBaseSubtr(cond, unit, stim) = nanmean(normTracesBaseSubtr(cond, unit, (stim-1)*(3/bin)+amplInt),3);
+            allStimAmplNormTracesBaseSubtr100(cond, unit, stim) = nanmean(normTracesBaseSubtr100(cond, unit, (stim-1)*(3/bin)+amplInt),3);
         end
     end
 end
@@ -1272,6 +1455,7 @@ end
 
 
 %% Anaylsis for Fig. 25d - reproduction of fig 5biii from eLife 2020 (average magnitude of normalized and baseline subtr traces)
+% Analysis for Fig. 26e (1x) : reproduction of fig 8bi from eLife 2020 (average magnitude of normalized and baseline subtr traces)
 
 
 if totalStim == 6
@@ -1293,9 +1477,15 @@ end
 
 for cond = (1:2:totalConds)
     for stim = 1:totalStim
-        [hAllStimMagnNormTracesBaseSubtr100((cond+1)/2, stim), pAllStimMagnNormTracesBaseSubtr100((cond+1)/2, stim)] =ttest(allStimMagnNormTracesBaseSubtr100(1,:, stim),allStimMagnNormTracesBaseSubtr100(cond+1,:, stim)); % opt vs vis 100%
-        [pAllStimMagnNormTracesBaseSubtr100W((cond+1)/2, stim), hAllStimMagnNormTracesBaseSubtr100W((cond+1)/2, stim)] =signrank(allStimMagnNormTracesBaseSubtr100(1,:, stim),allStimMagnNormTracesBaseSubtr100(cond+1,:, stim)); %  opt vs vis 100%
-    end
+        [hAllStimMagnNormTracesBaseSubtr100((cond+1)/2, stim), pAllStimMagnNormTracesBaseSubtr100((cond+1)/2, stim)] =ttest(allStimMagnNormTracesBaseSubtr100(cond,:, stim),allStimMagnNormTracesBaseSubtr100(cond+1,:, stim)); % opt vs vis 100%
+        [pAllStimMagnNormTracesBaseSubtr100W((cond+1)/2, stim), hAllStimMagnNormTracesBaseSubtr100W((cond+1)/2, stim)] =signrank(allStimMagnNormTracesBaseSubtr100(cond,:, stim),allStimMagnNormTracesBaseSubtr100(cond+1,:, stim)); %  opt vs vis 100%
+    end 
+    
+    % uncomment to run permutation correction for multiple comparisons
+%     notNaN = ~isnan(mean(allStimMagnNormTracesBaseSubtr100(cond,:, :),3));
+%     allStimMagnNormTracesBaseSubtr100Diff((cond+1)/2,:,:) = allStimMagnNormTracesBaseSubtr100(cond,:, :)-allStimMagnNormTracesBaseSubtr100(cond+1,:,:);  
+%     [pvalAllStimMagnNormTracesBaseSubtr100DiffMC((cond+1)/2,:), t_origAllStimMagnNormTracesBaseSubtr100DiffMC((cond+1)/2,:), crit_tAllStimMagnNormTracesBaseSubtr100DiffMC((cond+1)/2,:),...
+%         est_alphaAllStimMagnNormTracesBaseSubtr100DiffMC((cond+1)/2,:), seed_stateAllStimMagnNormTracesBaseSubtr100DiffMC(:,(cond+1)/2)]=mult_comp_perm_t1(squeeze(allStimMagnNormTracesBaseSubtr100Diff((cond+1)/2,notNaN,:)),50000);
 end
 for cond = (totalConds+1:2:2*totalConds-2)
     for stim = 1:totalStim
@@ -1304,3 +1494,490 @@ for cond = (totalConds+1:2:2*totalConds-2)
     end
 end
  
+%% Analysis for figure 28 - linear regression like figure 16f-h, but for single units
+
+% maxNoTrials = 25;
+% longBase = 1;
+% disp('longBase = 1, overwritten for fig 28')
+% if longBase
+%     if isequal(baseStim, [12 27 42 57 72 87]) %
+%         baseStim = [12 27 42 57 72 87] -7;
+%         baseDuration = 3/bin-1; % additional data points for baseline quantification (3 sec)
+%     elseif isequal(baseStim, [6, 12, 26])
+%         baseStim = [1, 12, 21];% modify baseStim to allow longer baseline quantification time
+%         baseDuration = 2/bin-1; % additional data points for baseline quantification (2 sec)
+%     elseif isequal(baseStim, [6, 12, 41])
+%         baseStim = [1, 12, 36];% modify baseStim to allow longer baseline quantification time
+%         baseDuration = 2/bin-1; % additional data points for baseline quantification (2 sec)
+%     end
+% end
+% 
+% allStimBaseByTrial = nan(totalConds, totalUnits, maxNoTrials, numel(baseStim));
+% for cond = 1:totalConds
+%     for unit = find(iUnitsFilt)
+%         for trial = 1:maxNoTrials
+%             for stim = 1:numel(baseStim)
+%                 allStimBaseByTrial(cond, unit, trial, stim) = nanmean(clusterTimeSeriesAll.traceByTrial(cond, unit, trial, baseStim(stim):baseStim(stim)+baseDuration),4);
+%             end
+%         end
+%         
+%     end
+% end
+% 
+% allStimAmplByTrial = nan(totalConds, totalUnits, maxNoTrials, totalStim);
+% for cond = 1:totalConds
+%     for unit = find(iUnitsFilt)
+%         for trial = 1:maxNoTrials
+%             for stim = 1:totalStim 
+%                 allStimAmplByTrial(cond, unit, trial, stim) = nanmean(clusterTimeSeriesAll.traceByTrial(cond, unit, trial, (stim-1)*(3/bin)+amplInt(1):(stim-1)*(3/bin)+amplInt(end)+2),4);
+%             end
+%         end
+%     end
+% end
+% 
+% longBase = 0;    
+% baseDuration = 1/bin-1;
+
+%% Analysis for fig. 29a -  average normalized baseline to same stim in the control condition
+
+allStimBaseNormToStim = nan(totalConds, totalUnits, numel(baseStim));
+
+for cond = 1:2:totalConds
+    for unit = find(baseSelect)
+        for stim = 1:numel(baseStim)  
+            if allStimBase(cond, unit, stim) ~= 0
+                allStimBaseNormToStim(cond, unit, stim) = allStimBase(cond, unit, stim)/ allStimBase(cond, unit, stim); 
+                allStimBaseNormToStim(cond+1, unit, stim) = allStimBase(cond+1, unit, stim)/ allStimBase(cond, unit, stim);
+            else
+                allStimBaseNormToStim(cond:cond+1, unit, stim) = NaN;
+            end
+        end    
+    end
+end   
+
+meanAllStimBaseNormToStim = squeeze(nanmean(allStimBaseNormToStim,2));
+STEMallStimBaseNormToStim = nan(totalConds, numel(baseStim));
+
+for cond = 1:totalConds
+    for stim = 1:numel(baseStim)
+        STEMallStimBaseNormToStim(cond,stim) = nanstd(allStimBaseNormToStim(cond,:,stim))/sqrt(sum(~isnan(allStimBaseNormToStim(cond,:,stim))));
+    end
+end
+
+for cond = 1:2:totalConds
+    for stim = 1:numel(baseStim)
+        [hAllStimBaseNormToStim((cond+1)/2,stim), pAllStimBaseNormToStim((cond+1)/2,stim)] = ttest(squeeze(allStimBaseNormToStim(cond,:,stim)),squeeze(allStimBaseNormToStim(cond+1,:,stim))); 
+        [pAllStimBaseNormToStimW((cond+1)/2,stim), hAllStimBaseNormToStimW((cond+1)/2,stim)] = signrank(squeeze(allStimBaseNormToStim(cond,:,stim)),squeeze(allStimBaseNormToStim(cond+1,:,stim))); 
+    end    
+end
+
+%% Analysis for fig. 29b - average normalized magnitude to same stim in the control condition
+
+allStimMagnNormToStim = nan(totalConds, totalUnits, totalStim);
+
+for cond = 1:2:totalConds
+    for unit = find(baseSelect)
+        for stim = 1:totalStim
+            if allStimMagn(cond, unit, stim) ~= 0
+                allStimMagnNormToStim(cond, unit, stim) = allStimMagn(cond, unit, stim)/ allStimMagn(cond, unit, stim);
+                allStimMagnNormToStim(cond+1, unit, stim) = allStimMagn(cond+1, unit, stim)/ allStimMagn(cond, unit, stim);
+            else
+                allStimMagnNormToStim(cond:cond+1, unit, stim) = NaN;
+            end
+        end
+    end
+end 
+
+meanAllStimMagnNormToStim = squeeze(nanmean(allStimMagnNormToStim,2));
+STEMallStimMagnNormToStim = nan(totalConds, totalStim);
+
+for cond = 1:totalConds
+    for stim = 1:totalStim
+        STEMallStimMagnNormToStim(cond,stim) = nanstd(allStimMagnNormToStim(cond,:,stim))/sqrt(sum(~isnan(allStimMagnNormToStim(cond,:,stim))));
+    end
+end
+
+for cond = 1:2:totalConds
+    for stim = 1:totalStim
+        [hAllStimMagnNormToStim((cond+1)/2,stim), pAllStimMagnNormToStim((cond+1)/2,stim)] = ttest(squeeze(allStimMagnNormToStim(cond,:,stim)),squeeze(allStimMagnNormToStim(cond+1,:,stim))); 
+        [pAllStimMagnNormToStimW((cond+1)/2,stim), hAllStimMagnNormToStimW((cond+1)/2,stim)] = signrank(squeeze(allStimMagnNormToStim(cond,:,stim)),squeeze(allStimMagnNormToStim(cond+1,:,stim))); 
+    end    
+end
+
+%% Analysis for fig. 29c - effect on baseline (difference between the stimulated and control condition), or normalized to the control condition
+% same p values as in fig 29a,as the only difference is the extra normalization
+
+allStimBaseSubtr = nan(totalConds, totalUnits, numel(baseStim));
+allStimBaseSubtrNorm = nan(totalConds, totalUnits, numel(baseStim));
+
+for cond = 1:2:totalConds
+    for unit = find(baseSelect)
+        for stim = 1:numel(baseStim)  
+            allStimBaseSubtr(cond, unit, stim) = allStimBase(cond, unit, stim)- allStimBase(cond, unit, stim); 
+            allStimBaseSubtr(cond+1, unit, stim) = allStimBase(cond+1, unit, stim)- allStimBase(cond, unit, stim); 
+            if allStimBase(cond, unit, stim) ~= 0
+                allStimBaseSubtrNorm(cond, unit, stim) = (allStimBase(cond, unit, stim)-allStimBase(cond, unit, stim))/ allStimBase(cond, unit, stim);
+                allStimBaseSubtrNorm(cond+1, unit, stim) = (allStimBase(cond+1, unit, stim)-allStimBase(cond, unit, stim))/ allStimBase(cond, unit, stim);
+            else
+                allStimBaseSubtrNorm(cond:cond+1, unit, stim) = NaN;
+            end
+        end    
+    end
+end   
+
+meanAllStimBaseSubtr = squeeze(nanmean(allStimBaseSubtr,2));
+meanAllStimBaseSubtrNorm = squeeze(nanmean(allStimBaseSubtrNorm,2));
+STEMallStimBaseSubtr = nan(totalConds, numel(baseStim));
+STEMallStimBaseSubtrNorm = nan(totalConds, numel(baseStim));
+
+for cond = 1:totalConds
+    for stim = 1:numel(baseStim)
+        STEMallStimBaseSubtr(cond,stim) = nanstd(allStimBaseSubtr(cond,:,stim))/sqrt(sum(~isnan(allStimBaseSubtr(cond,:,stim))));
+        STEMallStimBaseSubtrNorm(cond,stim) = nanstd(allStimBaseSubtrNorm(cond,:,stim))/sqrt(sum(~isnan(allStimBaseSubtrNorm(cond,:,stim))));    
+    end
+end
+
+for cond = 1:2:totalConds
+    for stim = 1:numel(baseStim)
+        [hAllStimBaseSubtr((cond+1)/2,stim), pAllStimBaseSubtr((cond+1)/2,stim)] = ttest(squeeze(allStimBaseSubtr(cond,:,stim)),squeeze(allStimBaseSubtr(cond+1,:,stim))); 
+        [pAllStimBaseSubtrW((cond+1)/2,stim), hAllStimBaseSubtrW((cond+1)/2,stim)] = signrank(squeeze(allStimBaseSubtr(cond,:,stim)), squeeze(allStimBaseSubtr(cond+1,:,stim))); 
+        [hAllStimBaseSubtrNorm((cond+1)/2,stim), pAllStimBaseSubtrNorm((cond+1)/2,stim)] = ttest(squeeze(allStimBaseSubtrNorm(cond,:,stim)),squeeze(allStimBaseSubtrNorm(cond+1,:,stim))); 
+        [pAllStimBaseSubtrNormW((cond+1)/2,stim), hAllStimBaseSubtrNormW((cond+1)/2,stim)] = signrank(squeeze(allStimBaseSubtrNorm(cond,:,stim)), squeeze(allStimBaseSubtrNorm(cond+1,:,stim))); 
+    end    
+end
+
+%% Fig 30a -  baseline of the trace that represents the difference of the normalized traces
+
+allStimBaseNormTraceFreqAllAdjSubtr = nan(totalConds/2, totalUnits, numel(baseStim));
+
+baseDuration = 1/bin-1; % additional data points for baseline quantification (1 sec) 
+
+for cond = 1:2:totalConds
+    for unit = find(baseSelect)
+        for stim = 1:numel(baseStim)
+            allStimBaseNormTraceFreqAllAdjSubtr((cond+1)/2, unit, stim) = nanmean(normTraceFreqAllAdjSubtr((cond+1)/2, unit,baseStim(stim):baseStim(stim)+baseDuration),3);
+        end
+    end
+end
+
+meanAllStimBaseNormTraceFreqAllAdjSubtr = squeeze(nanmean(allStimBaseNormTraceFreqAllAdjSubtr,2));
+STEMallStimBaseNormTraceFreqAllAdjSubtr = nan(totalConds/2, numel(baseStim));
+
+
+for cond = 1:totalConds/2
+    for stim = 1:numel(baseStim)
+        STEMallStimBaseNormTraceFreqAllAdjSubtr(cond,stim) = nanstd(allStimBaseNormTraceFreqAllAdjSubtr(cond,:,stim))/sqrt(sum(~isnan(allStimBaseNormTraceFreqAllAdjSubtr(cond,:,stim))));
+    end
+end
+
+for cond = 1:totalConds/2
+    for stim = 1:numel(baseStim)
+        [hAllStimBaseNormTraceFreqAllAdjSubtr(cond,stim), pAllStimBaseNormTraceFreqAllAdjSubtr(cond,stim)] = ttest(squeeze(allStimBaseNormTraceFreqAllAdjSubtr(cond,:,stim))); 
+        [pAllStimBaseNormTraceFreqAllAdjSubtrW(cond,stim), hAllStimBaseNormTraceFreqAllAdjSubtrW(cond,stim)] = signrank(squeeze(allStimBaseNormTraceFreqAllAdjSubtr(cond,:,stim))); 
+    end    
+end
+
+%% Fig. 30b -  magnitude of the trace that represents the difference of the normalized traces
+
+allStimAmplNormTraceFreqAllAdjSubtr = nan(totalConds/2, totalUnits, totalStim);
+% allStimMagnNormTraceFreqAllAdjSubtr = nan(totalConds/2, totalUnits, totalStim);
+% calculare max in each timecourse of each cell, for conds with evoked activity
+if sessionInfoAll.trialDuration == 18
+    amplInt = [18:18]; % in data points
+elseif sessionInfoAll.trialDuration == 6
+    amplInt = [31:33];
+elseif sessionInfoAll.trialDuration == 9
+    amplInt = [46:48];
+end
+
+for cond = 1:2:totalConds
+    for unit = find(baseSelect)
+        for stim = 1:totalStim
+            allStimAmplNormTraceFreqAllAdjSubtr((cond+1)/2, unit, stim) = nanmean(normTraceFreqAllAdjSubtr((cond+1)/2, unit, (stim-1)*(3/bin)+amplInt),3);            
+        end
+    end
+end
+
+allStimMagnNormTraceFreqAllAdjSubtr = allStimAmplNormTraceFreqAllAdjSubtr-allStimBaseNormTraceFreqAllAdjSubtr;
+meanAllStimMagnNormTraceFreqAllAdjSubtr = squeeze(nanmean(allStimMagnNormTraceFreqAllAdjSubtr,2));
+
+STEMallStimMagnNormTraceFreqAllAdjSubtr = nan(totalConds/2, totalStim);
+
+for cond = 1:totalConds/2
+    for stim = 1:totalStim
+        STEMallStimMagnNormTraceFreqAllAdjSubtr(cond,stim) = nanstd(allStimMagnNormTraceFreqAllAdjSubtr(cond,:,stim))/sqrt(sum(~isnan(allStimMagnNormTraceFreqAllAdjSubtr(cond,:,stim))));
+    end
+end
+
+for cond = 1:totalConds/2
+    for stim = 1:totalStim
+        [hAllStimMagnNormTraceFreqAllAdjSubtr(cond,stim), pAllStimMagnNormTraceFreqAllAdjSubtr(cond,stim)] = ttest(squeeze(allStimMagnNormTraceFreqAllAdjSubtr(cond,:,stim))); 
+        [pAllStimMagnNormTraceFreqAllAdjSubtrW(cond,stim), hAllStimMagnNormTraceFreqAllAdjSubtrW(cond,stim)] = signrank(squeeze(allStimMagnNormTraceFreqAllAdjSubtr(cond,:,stim))); 
+    end    
+end
+
+%% Fig. 30bx -  compare difference of magnitude in the non-adj norm traces to 0 (magn of 1st stim = 1 and not peak =1)
+
+% calculate the difference in magnitudes in Vph vs V and Sph vs S 
+normTraceFreqAllAdjSubtr = nan(totalConds/2, totalUnits, totalDatapoints);
+for cond =1:2:totalConds
+    allStimMagnNormTracesBaseSubtr100Subtr((cond+1)/2,:,:) = squeeze(allStimMagnNormTracesBaseSubtr100(cond+1, :, :) - allStimMagnNormTracesBaseSubtr100(cond, :, :)); 
+end
+meanAllStimMagnNormTracesBaseSubtr100Subtr = squeeze(nanmean(allStimMagnNormTracesBaseSubtr100Subtr,2));
+
+STEMallStimMagnNormTracesBaseSubtr100Subtr = nan(totalConds/2, totalStim);
+
+for cond = 1:totalConds/2
+    for stim = 1:totalStim
+        STEMallStimMagnNormTracesBaseSubtr100Subtr(cond,stim) = nanstd(allStimMagnNormTracesBaseSubtr100Subtr(cond,:,stim))/sqrt(sum(~isnan(allStimMagnNormTracesBaseSubtr100Subtr(cond,:,stim))));
+    end
+end
+
+for cond = 1:totalConds/2
+    for stim = 1:totalStim
+        [hAllStimMagnNormTracesBaseSubtr100Subtr(cond,stim), pAllStimMagnNormTracesBaseSubtr100Subtr(cond,stim)] = ttest(squeeze(allStimMagnNormTracesBaseSubtr100Subtr(cond,:,stim))); 
+        [pAllStimMagnNormTracesBaseSubtr100SubtrW(cond,stim), hAllStimMagnNormTracesBaseSubtr100SubtrW(cond,stim)] = signrank(squeeze(allStimMagnNormTracesBaseSubtr100Subtr(cond,:,stim))); 
+    end    
+end
+
+% calculate average magnitude difference over stims 2-4: 
+
+stim24MagnNormTracesBaseSubtr100Subtr = mean(allStimMagnNormTracesBaseSubtr100Subtr(:,:,2:4),3);
+meanStim24MagnNormTracesBaseSubtr100Subtr = nanmean(stim24MagnNormTracesBaseSubtr100Subtr,2);
+
+STEMstim24MagnNormTracesBaseSubtr100Subtr = nan(totalConds/2);
+
+for cond = 1:totalConds/2  
+    STEMstim24MagnNormTracesBaseSubtr100Subtr(cond) = nanstd(stim24MagnNormTracesBaseSubtr100Subtr(cond,:))/sqrt(sum(~isnan(stim24MagnNormTracesBaseSubtr100Subtr(cond,:))));   
+end
+
+for cond = 1:totalConds/2    
+    [hStim24MagnNormTracesBaseSubtr100Subtr(cond), pStim24MagnNormTracesBaseSubtr100Subtr(cond)] = ttest(squeeze(stim24MagnNormTracesBaseSubtr100Subtr(cond,:)));
+    [pStim24MagnNormTracesBaseSubtr100SubtrW(cond), hStim24MagnNormTracesBaseSubtr100SubtrW(cond)] = signrank(squeeze(stim24MagnNormTracesBaseSubtr100Subtr(cond,:)));   
+end
+
+%% ttest on magnitude effect (compares to 0) is like paired t-test for comparing baseline effect and amplitude effect
+% 
+% for cond = 1:totalConds/2
+%     for stim = 1:totalStim
+%         [hxx(cond,stim), pxx(cond,stim)] = ttest(squeeze(allStimBaseNormTraceFreqAllAdjSubtr(cond,:,stim)),squeeze(allStimAmplNormTraceFreqAllAdjSubtr(cond,:,stim))); 
+%     end    
+% end
+%% generate graphs above with colors specific for the respective mouse-cell combination
+% can be applied to graphs 29 and 30
+
+if sum(classUnitsAll(iUnitsFilt) == 1) && strcmp(expSetFilt(1).animalStrain, 'NexCre')
+    cCreCellType = [0 176 80]/255;% NexCre exc
+elseif sum(classUnitsAll(iUnitsFilt) == 2) && strcmp(expSetFilt(1).animalStrain, 'NexCre')
+    cCreCellType = [230 153 153]/255;% NexCre inh
+elseif sum(classUnitsAll(iUnitsFilt) == 1) && strcmp(expSetFilt(1).animalStrain, 'PvCre')
+    cCreCellType = [153 224 185]/255;% PvCre exc
+elseif sum(classUnitsAll(iUnitsFilt) == 2) && strcmp(expSetFilt(1).animalStrain, 'PvCre')
+    cCreCellType = [192 0 0]/255;% PvCre inh
+end
+
+%% Fig. 30c -  magnitude of the trace that represents the difference of the normalized traces
+% check if the one sample t-test on magnitude in subtracted traces (fig 30b) returns
+% the same p values as the 2-sample ttest on magnitude in the
+% non-subtracted traces ---> it is the same thing
+% no figure with this name, just compares p values
+
+allStimBaseNormTraceFreqAllAdj=nan(totalConds, totalUnits, totalStim);
+baseDuration = 1/bin-1; % additional data points for baseline quantification (1 sec)
+
+allStimAmplNormTraceFreqAllAdj = nan(totalConds, totalUnits, totalStim);
+% calculare max in each timecourse of each cell, for conds with evoked activity
+if sessionInfoAll.trialDuration == 18
+    amplInt = [18:18]; % in data points
+elseif sessionInfoAll.trialDuration == 6
+    amplInt = [31:33];
+elseif sessionInfoAll.trialDuration == 9
+    amplInt = [46:48];
+end
+
+for cond = 1:totalConds
+    for unit = find(baseSelect)
+        for stim = 1:numel(baseStim)
+            allStimBaseNormTraceFreqAllAdj(cond, unit, stim) = nanmean(normTraceFreqAllAdj(cond, unit,baseStim(stim):baseStim(stim)+baseDuration),3);
+        end
+        for stim = 1:totalStim
+            allStimAmplNormTraceFreqAllAdj(cond, unit, stim) = nanmean(normTraceFreqAllAdj(cond, unit, (stim-1)*(3/bin)+amplInt),3);
+        end
+        
+    end
+end
+
+allStimMagnNormTraceFreqAllAdj = allStimAmplNormTraceFreqAllAdj-allStimBaseNormTraceFreqAllAdj;
+meanAllStimMagnNormTraceFreqAllAdj = squeeze(nanmean(allStimMagnNormTraceFreqAllAdj,2));
+
+STEMallStimMagnNormTraceFreqAllAdj = nan(totalConds, totalStim);
+
+for cond = 1:totalConds
+    for stim = 1:totalStim
+        STEMallStimMagnNormTraceFreqAllAdj(cond,stim) = nanstd(allStimMagnNormTraceFreqAllAdj(cond,:,stim))/sqrt(sum(~isnan(allStimMagnNormTraceFreqAllAdj(cond,:,stim))));
+    end
+end
+
+for cond = 1:2:totalConds
+    for stim = 1:totalStim
+        [hAllStimMagnNormTraceFreqAllAdj((cond+1)/2,stim), pAllStimMagnNormTraceFreqAllAdj((cond+1)/2,stim)] = ttest(squeeze(allStimMagnNormTraceFreqAllAdj(cond,:,stim)),squeeze(allStimMagnNormTraceFreqAllAdj(cond+1,:,stim))); 
+        [pAllStimMagnNormTraceFreqAllAdjW((cond+1)/2,stim), hAllStimMagnNormTraceFreqAllAdjW((cond+1)/2,stim)] = signrank(squeeze(allStimMagnNormTraceFreqAllAdj(cond,:,stim)), squeeze(allStimMagnNormTraceFreqAllAdj(cond+1,:,stim))); 
+    end    
+end
+        
+%% Fig 30 d relative change in magnitude of the normalized traces - 
+% magnitude normalized to each peak in the control condition
+
+relChAllStimMagnNormTraceFreqAllAdj = nan(totalConds, totalUnits, totalStim);
+for cond = 1:2:totalConds
+    for unit = find(baseSelect)
+        for stim = 1:totalStim
+            if abs(allStimMagnNormTraceFreqAllAdj(1, unit, stim))>=0.001 %&& isfinite(allStimMagnNormTraceFreqAllAdj(1, unit, stim))
+%                 relChAllStimMagnNormTraceFreqAllAdj(cond, unit, stim) = allStimMagnNormTraceFreqAllAdj(cond, unit, stim)-allStimMagnNormTraceFreqAllAdj(1, unit, stim);
+                relChAllStimMagnNormTraceFreqAllAdj(cond, unit, stim) = allStimMagnNormTraceFreqAllAdj(cond, unit, stim)/allStimMagnNormTraceFreqAllAdj(cond, unit, stim)-1;
+                relChAllStimMagnNormTraceFreqAllAdj(cond+1, unit, stim) = allStimMagnNormTraceFreqAllAdj(cond+1, unit, stim)/allStimMagnNormTraceFreqAllAdj(cond, unit, stim)-1;
+
+            else
+                relChAllStimMagnNormTraceFreqAllAdj(cond, unit, stim) = NaN;
+            end
+        end    
+    end
+end    
+
+meanRelChAllStimMagnNormTraceFreqAllAdj = squeeze(nanmean(relChAllStimMagnNormTraceFreqAllAdj,2));
+
+STEMrelChAllStimMagnNormTraceFreqAllAdj = nan(totalConds, totalStim);
+
+for cond = 1:totalConds
+    for stim = 1:totalStim
+        STEMrelChAllStimMagnNormTraceFreqAllAdj(cond,stim) = nanstd(relChAllStimMagnNormTraceFreqAllAdj(cond,:,stim))/sqrt(sum(~isnan(relChAllStimMagnNormTraceFreqAllAdj(cond,:,stim))));
+    end
+end
+
+for cond = 1:2:totalConds
+    for stim = 1:totalStim
+        [hRelChAllStimMagnNormTraceFreqAllAdj((cond+1)/2,stim), pRelChAllStimMagnNormTraceFreqAllAdj((cond+1)/2,stim)] = ttest(squeeze(relChAllStimMagnNormTraceFreqAllAdj(cond+1,:,stim))); 
+        [pRelChAllStimMagnNormTraceFreqAllAdjW((cond+1)/2,stim), hRelChAllStimMagnNormTraceFreqAllAdjW((cond+1)/2,stim)] = signrank(squeeze(relChAllStimMagnNormTraceFreqAllAdj(cond+1,:,stim))); 
+    end    
+end       
+
+%%
+
+% comparison on baseline effects between Vph and Sph
+% based on fig 25c
+
+for cond = (1:2:totalConds-2)
+    for stim = 1:totalStim
+        [hAllStimBaseNormTracesBaseSubtr100PhComp((cond+1)/2, stim), pAllStimBaseNormTracesBaseSubtr100PhComp((cond+1)/2, stim)] =ttest(allStimBaseNormTracesBaseSubtr100(totalConds,:, stim),allStimBaseNormTracesBaseSubtr100(cond+1,:, stim)); % opt vs vis 100%
+        [pAllStimBaseNormTracesBaseSubtr100PhCompW((cond+1)/2, stim), hAllStimBaseNormTracesBaseSubtr100PhCompW((cond+1)/2, stim)] =signrank(allStimBaseNormTracesBaseSubtr100(totalConds,:, stim),allStimBaseNormTracesBaseSubtr100(cond+1,:, stim)); %  opt vs vis 100%
+    end   
+end
+
+
+
+%% Figure 31 a - similar to fig 2, but for selected OI
+% reminder: there is no adjustment over the last 2 condition
+
+% if longBase % OIposUnits and OInegUnits already calculated above
+%     OIposUnits = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 4)>0; % run the next section before uncommenting this line
+%     OInegUnits = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 4)<0; % run the next section before uncommenting this line
+if longBase == 0
+    path1 =pwd;
+    filenameOIposnegUnits = fullfile(path1,'OIposnegUnits.mat');
+    if exist(filenameOIposnegUnits,'file')
+        load(filenameOIposnegUnits)
+        disp('Loading OIposnegUnits.mat')
+    else
+        disp('The OIposnegUnits.mat does not exist')
+    end    
+end    
+% these 2 lines can be commented out
+% OIposUnits = OIposUnits & baseSelect;
+% OInegUnits = OInegUnits & baseSelect;
+
+normTraceFreqAllAdjOIpos = normTraceFreqAllAdj(:,OIposUnits,:); % copying to already contain the spont conds, which will not be adjusted
+meanNormTraceFreqAllAdjOIpos = squeeze(nanmean(normTraceFreqAllAdjOIpos,2));
+
+normTraceFreqAllAdjOIneg = normTraceFreqAllAdj(:,OInegUnits,:); % copying to already contain the spont conds, which will not be adjusted
+meanNormTraceFreqAllAdjOIneg = squeeze(nanmean(normTraceFreqAllAdjOIneg,2));
+   
+% Calculate STEM of TCs over cells
+STEMnormTraceFreqAllAdjOIpos = nan(totalConds, totalDatapoints);
+STEMnormTraceFreqAllAdjOIneg = nan(totalConds, totalDatapoints);
+for cond = 1:totalConds
+    for datapoint = 1:totalDatapoints
+        STEMnormTraceFreqAllAdjOIpos(cond, datapoint) = nanstd(normTraceFreqAllAdjOIpos(cond,:,datapoint))/sqrt(sum(~isnan(normTraceFreqAllAdjOIpos(cond, :,datapoint))));
+        STEMnormTraceFreqAllAdjOIneg(cond, datapoint) = nanstd(normTraceFreqAllAdjOIneg(cond,:,datapoint))/sqrt(sum(~isnan(normTraceFreqAllAdjOIneg(cond, :,datapoint))));
+    end    
+end
+
+% if longBase 
+%     path1 =pwd;
+%     filenameOIposnegUnits = fullfile(path1,'OIposnegUnits.mat');
+%     disp('Saving OIposneg.mat')
+%     save('OIposnegUnits', 'OIposUnits', 'OInegUnits.mat')
+% end
+
+%% Figure 31 b - similar to fig4b, but for selected OI
+
+normAllStimBaseOIpos = normAllStimBase(:,OIposUnits,:);
+normAllStimBaseOIneg = normAllStimBase(:,OInegUnits,:);
+
+meanNormAllStimBaseOIpos = squeeze(nanmean(normAllStimBaseOIpos,2));
+meanNormAllStimBaseOIneg = squeeze(nanmean(normAllStimBaseOIneg,2));
+
+STEMnormAllStimBaseOIpos = nan(totalConds, numel(baseStim));
+STEMnormAllStimBaseOIneg = nan(totalConds, numel(baseStim));
+
+for cond = 1:totalConds
+    for stim = 1:numel(baseStim)
+        STEMnormAllStimBaseOIpos(cond,stim) = nanstd(normAllStimBaseOIpos(cond,:,stim))/sqrt(sum(~isnan(normAllStimBaseOIpos(cond,:,stim))));
+        STEMnormAllStimBaseOIneg(cond,stim) = nanstd(normAllStimBaseOIneg(cond,:,stim))/sqrt(sum(~isnan(normAllStimBaseOIneg(cond,:,stim))));
+    end
+end
+
+for cond = 1:2:totalConds
+    for stim = 1:numel(baseStim)
+        [hNormAllStimBaseOIpos((cond+1)/2,stim,1), pNormAllStimBaseOIpos((cond+1)/2,stim,1)] = ttest(squeeze(normAllStimBaseOIpos(cond+1,:,1)),squeeze(normAllStimBaseOIpos(cond+1,:,stim))); % param: all stims vs first stim in photostim conditions
+        [hNormAllStimBaseOIpos((cond+1)/2,stim,2), pNormAllStimBaseOIpos((cond+1)/2,stim,2)] = ttest(squeeze(normAllStimBaseOIpos(cond,:,stim)),squeeze(normAllStimBaseOIpos(cond+1,:,stim))); % param: stim in photostim cond vs stim in non-photostim cond
+        [pNormAllStimBaseOIposW((cond+1)/2,stim,1), hNormAllStimBaseOIposW((cond+1)/2,stim,1)] = signrank(squeeze(normAllStimBaseOIpos(cond+1,:,1)),squeeze(normAllStimBaseOIpos(cond+1,:,stim))); % nonparam: all stims vs first stim in photostim conditions
+        [pNormAllStimBaseOIposW((cond+1)/2,stim,2), hNormAllStimBaseOIposW((cond+1)/2,stim,2)] = signrank(squeeze(normAllStimBaseOIpos(cond,:,stim)),squeeze(normAllStimBaseOIpos(cond+1,:,stim))); % nonparam: stim in photostim cond vs stim in non-photostim cond
+        [hNormAllStimBaseOIneg((cond+1)/2,stim,1), pNormAllStimBaseOIneg((cond+1)/2,stim,1)] = ttest(squeeze(normAllStimBaseOIneg(cond+1,:,1)),squeeze(normAllStimBaseOIneg(cond+1,:,stim))); % param: all stims vs first stim in photostim conditions
+        [hNormAllStimBaseOIneg((cond+1)/2,stim,2), pNormAllStimBaseOIneg((cond+1)/2,stim,2)] = ttest(squeeze(normAllStimBaseOIneg(cond,:,stim)),squeeze(normAllStimBaseOIneg(cond+1,:,stim))); % param: stim in photostim cond vs stim in non-photostim cond
+        [pNormAllStimBaseOInegW((cond+1)/2,stim,1), hNormAllStimBaseOInegW((cond+1)/2,stim,1)] = signrank(squeeze(normAllStimBaseOIneg(cond+1,:,1)),squeeze(normAllStimBaseOIneg(cond+1,:,stim))); % nonparam: all stims vs first stim in photostim conditions
+        [pNormAllStimBaseOInegW((cond+1)/2,stim,2), hNormAllStimBaseOInegW((cond+1)/2,stim,2)] = signrank(squeeze(normAllStimBaseOIneg(cond,:,stim)),squeeze(normAllStimBaseOIneg(cond+1,:,stim))); % nonparam: stim in photostim cond vs stim in non-photostim cond
+    end    
+end
+
+%% Fig. 32bx (bxx, bxxx) -  compare difference of magnitude in the non-adj norm traces to 0 (magn of 1st stim = 1 and not peak =1) for OIpos and OIneg
+% these 2 lines can be commented out
+OIposUnits = OIposUnits & baseSelect;
+OInegUnits = OInegUnits & baseSelect;
+
+allStimMagnNormTracesBaseSubtr100SubtrOIpos =allStimMagnNormTracesBaseSubtr100Subtr(:,OIposUnits,:);
+allStimMagnNormTracesBaseSubtr100SubtrOIneg =allStimMagnNormTracesBaseSubtr100Subtr(:,OInegUnits,:);
+
+meanAllStimMagnNormTracesBaseSubtr100SubtrOIpos = squeeze(nanmean(allStimMagnNormTracesBaseSubtr100SubtrOIpos,2));
+meanAllStimMagnNormTracesBaseSubtr100SubtrOIneg = squeeze(nanmean(allStimMagnNormTracesBaseSubtr100SubtrOIneg,2));
+
+STEMallStimMagnNormTracesBaseSubtr100SubtrOIpos = nan(totalConds/2, totalStim);
+STEMallStimMagnNormTracesBaseSubtr100SubtrOIneg = nan(totalConds/2, totalStim);
+
+for cond = 1:totalConds/2
+    for stim = 1:totalStim
+        STEMallStimMagnNormTracesBaseSubtr100SubtrOIpos(cond,stim) = nanstd(allStimMagnNormTracesBaseSubtr100SubtrOIpos(cond,:,stim))/sqrt(sum(~isnan(allStimMagnNormTracesBaseSubtr100SubtrOIpos(cond,:,stim))));
+        STEMallStimMagnNormTracesBaseSubtr100SubtrOIneg(cond,stim) = nanstd(allStimMagnNormTracesBaseSubtr100SubtrOIneg(cond,:,stim))/sqrt(sum(~isnan(allStimMagnNormTracesBaseSubtr100SubtrOIneg(cond,:,stim))));
+
+    end
+end
+
+for cond = 1:totalConds/2
+    for stim = 1:totalStim
+        [hAllStimMagnNormTracesBaseSubtr100SubtrOIpos(cond,stim), pAllStimMagnNormTracesBaseSubtr100SubtrOIpos(cond,stim)] = ttest(squeeze(allStimMagnNormTracesBaseSubtr100SubtrOIpos(cond,:,stim))); 
+        [pAllStimMagnNormTracesBaseSubtr100SubtrOIposW(cond,stim), hAllStimMagnNormTracesBaseSubtr100SubtrOIposW(cond,stim)] = signrank(squeeze(allStimMagnNormTracesBaseSubtr100SubtrOIpos(cond,:,stim))); 
+        [hAllStimMagnNormTracesBaseSubtr100SubtrOIneg(cond,stim), pAllStimMagnNormTracesBaseSubtr100SubtrOIneg(cond,stim)] = ttest(squeeze(allStimMagnNormTracesBaseSubtr100SubtrOIneg(cond,:,stim))); 
+        [pAllStimMagnNormTracesBaseSubtr100SubtrOInegW(cond,stim), hAllStimMagnNormTracesBaseSubtr100SubtrOInegW(cond,stim)] = signrank(squeeze(allStimMagnNormTracesBaseSubtr100SubtrOIneg(cond,:,stim))); 
+
+    end    
+end
+

@@ -9,21 +9,22 @@ filt = true(numFilt,size(expSet,2));
 
 %%%%%%% add filter here %%%%%%%
 
-% filt(1,:) = [expSet.trialDuration] == 6;
-% filt(2,:) = strcmp({expSet.animalStrain}, 'Gad2Cre');
+filt(1,:) = [expSet.trialDuration] == 18; % Protocol type
+filt(2,:) = strcmp({expSet.animalStrain}, 'PvCre'); % mouse line
 % filt(3,:) = strcmp({expSet.experimentName}, '2020-08-11_15-44-59');
 % filt(4,:) = ~(contains({expSet.experimentName}, '2020-11-12_14-20-47') | contains({expSet.experimentName}, '2020-12-01_13-58-50') | contains({expSet.experimentName},'2020-12-03_14-41-44'));
 % filt(5,:) = contains({expSet.animalName}, '20200730') | contains({expSet.animalName}, '20200805');
-filt(6,1:131) = 0; % exclude experiments before 29.09.2020
+% filt(6,:) = datetime({expSet.experimentName}, 'InputFormat','yyyy-MM-dd_HH-mm-ss')>datetime(2020,09,28); % exclude experiments before a certain date (yyyy, MM, dd)
 filt(7,:) = [expSet.expSel1] == 1; % first experiment selection
 filt(8,:) = [expSet.expSel2] == 1; % 2nd experiment selection
-% filt(9,:) = 0;
-% filt(9, 129:end) = 1;
+filt(9,:) = [expSet.expSel3] == 1; % 3rd experiment selection
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 combinedFilter = sum(filt,1) == numFilt;
 expSetFilt = expSet(combinedFilter); % apply filters to the experiment set
+disp(['Experiments to be analyzed: ', num2str(size(expSetFilt,2))]);
 
 allExpNo
 %% Data loading
@@ -31,9 +32,8 @@ allExpNo
 for i =1:(size(expSetFilt,2))
     expSetFilt(i).animalID = expSetFilt(i).animalName(1:end-4);
 end    
-expSetFilt = orderfields(expSetFilt,[1:3,9,4:8]); % reorder fields in structure
-
-% Read each experiment
+% expSetFilt = orderfields(expSetFilt,[1:3,9,4:8]); % reorder fields in structure
+expSetFilt = orderfields(expSetFilt,[1:3,10,4:9]); % reorder fields in structure
 
 % create structures with experiment info for each unit
 fields = fieldnames(expSetFilt);
@@ -44,6 +44,17 @@ expSetFiltMua = cell2struct(c,fields); % no. rows = no. units
 % import experiments from the experiment set list
 path = strsplit(pwd,filesep);
 
+realDepthAll = [];
+if std([expSetFilt.trialDuration])% if all elements (protocols) ar different
+    allProt=1;
+else % if all elements (protocols) are the same
+    allProt=0;
+end    
+
+% putativeConnections.excitatory = [];
+putativeConnectionsTemp = struct('excitatory',{[]},'inhibitory',{[]});
+putativeConnections = struct('excitatory',{[]},'inhibitory',{[]});
+% Read each experiment
 for i =1:(size(expSetFilt,2))
     clearvars sessionInfo timeSeries spikeClusterData clusterTimeSeries cellMetrics orientationMetrics
     
@@ -71,11 +82,30 @@ for i =1:(size(expSetFilt,2))
     [orientationMetrics, OMexist] = tryLoad('orientationMetrics', filenameOrientationMetrics);
     
     clusterTimeSeries = adjustStruct(clusterTimeSeries); % add 2 extra fields: iSelectedCodesInd and iSelectedCodesIndSpont   
-    
+
 %     % expand Sua and Mua structures containing experiment information
     currUnitsSua = size(expSetFiltSua,2);
     expSua = size(clusterTimeSeries.traceFreqGood,2);
     expSetFiltSua(currUnitsSua+1:currUnitsSua+expSua) = expSetFilt(i);
+    realDepthAll = [realDepthAll; spikeClusterData.uniqueCodesRealDepth(ismember(spikeClusterData.uniqueCodes(:,1), spikeClusterData.goodCodes))];
+
+    
+    %%%%%%
+    % new code
+    putativeConnections(currUnitsSua+1:currUnitsSua+expSua) = putativeConnectionsTemp;
+    if ~isempty(cellMetrics.putativeConnections.excitatory)
+        for ind = 1:size(cellMetrics.putativeConnections.excitatory,1)
+            unitNo = cellMetrics.putativeConnections.excitatory(ind,1);
+            putativeConnections(currUnitsSua+unitNo).excitatory = [putativeConnections(currUnitsSua+unitNo).excitatory, cellMetrics.putativeConnections.excitatory(ind,2)+currUnitsSua-1];
+        end
+    end   
+    if ~isempty(cellMetrics.putativeConnections.inhibitory)
+        for ind = 1:size(cellMetrics.putativeConnections.inhibitory,1)
+            unitNo = cellMetrics.putativeConnections.inhibitory(ind,1);
+            putativeConnections(currUnitsSua+unitNo).inhibitory = [putativeConnections(currUnitsSua+unitNo).inhibitory, cellMetrics.putativeConnections.inhibitory(ind,2)+currUnitsSua-1];
+        end
+    end  
+    %%%%%%
     
     currUnitsMua = size(expSetFiltMua,2);
     expMua = size(clusterTimeSeries.traceFreqMuaSel,2);
@@ -85,24 +115,32 @@ for i =1:(size(expSetFilt,2))
     if i == 1
         sessionInfoAll = sessionInfo;
         spikeClusterDataAll = spikeClusterData;
-        cellMetricsAll = cellMetrics;
+        cellMetricsAll = cellMetrics;        
         clusterTimeSeriesAll = clusterTimeSeries; 
         orientationMetricsAll = orientationMetrics;
     else
-%         sessionInfoAll = addToStruct(sessionInfo, sessionInfoAll);
-        spikeClusterDataAll = addToStruct(spikeClusterData, spikeClusterDataAll);
-        cellMetricsAll = addToStruct(cellMetrics, cellMetricsAll);       
-        clusterTimeSeriesAll = addToStruct(clusterTimeSeries, clusterTimeSeriesAll); 
+%         sessionInfoAll = addToStruct(sessionInfo, sessionInfoAll, allProt);
+        spikeClusterDataAll = addToStruct(spikeClusterData, spikeClusterDataAll, allProt);
+        cellMetricsAll = addToStruct(cellMetrics, cellMetricsAll, allProt);       
+        clusterTimeSeriesAll = addToStruct(clusterTimeSeries, clusterTimeSeriesAll, allProt); 
         orientationMetricsAll = [orientationMetricsAll orientationMetrics];
     end    
     
 end
+sessionInfoAll_backup = sessionInfoAll;
+
 expSetFiltSua(1) = []; % delete empty first row
 expSetFiltMua(1) = []; % delete empty first row
+putativeConnections(1) = []; % delete empty last row
+
+% extract name and number of experiments
+[expNames,~,iEN] = unique({expSetFiltSua.experimentName},'stable');
+suaEachExp = accumarray(iEN(:),1,[numel(expNames),1]); % previously called hemisphere
+noExps = numel(expNames)
 
 % extract name and number of hemispheres
 [hemNames,~,iHN] = unique({expSetFiltSua.animalName},'stable');
-suaEachHem = accumarray(iHN(:),1,[numel(hemNames),1]); % previously called animals
+suaEachHem = accumarray(iHN(:),1,[numel(hemNames),1]); % previously called hemisphere
 noHems = numel(hemNames)
 
 % name and number of animals - equal or different than hemispheres
@@ -133,9 +171,11 @@ for i = 1:noHems
 end
 
 fs = 24; %font size
+fsStars = 24;
 smooth_method = 'moving';
-classUnitsAll = ([cellMetricsAll.troughPeakTime]< 0.5) + 1; % subject to change - different criteria; 1 = pyr, 2 = inh
 EIColor = 'gr';
+fC=0.5; % 0.8 for waveforms
+EI_Color = [fC,1,fC; 1,fC,fC];
 
 % Analysis for Figs xx - yy -
 
@@ -144,19 +184,42 @@ totalDatapoints = size(clusterTimeSeriesAll.traceFreqGood,3); % number of data t
 totalStim = numel(clusterTimeSeriesAll.stimTime);
 
 bin = clusterTimeSeriesAll.bin;
-plotBeg = -sessionInfoAll.preTrialTime + bin;
-plotEnd = sessionInfoAll.trialDuration + sessionInfoAll.afterTrialTime;
+corrTimeline = 1;
+if corrTimeline == 0
+    plotBeg = -sessionInfoAll.preTrialTime + bin;
+    plotEnd = sessionInfoAll.trialDuration + sessionInfoAll.afterTrialTime;
+else    
+    plotBeg = 0 + bin;
+    plotEnd = sessionInfoAll.trialDuration + sessionInfoAll.afterTrialTime + sessionInfoAll.preTrialTime;
+    sessionInfoAll.visStim = sessionInfoAll_backup.visStim + sessionInfoAll.preTrialTime;
+    sessionInfoAll.optStimInterval = sessionInfoAll_backup.optStimInterval+ sessionInfoAll.preTrialTime;
+%     sessionInfoAll.preTrialTime = 0;
+%     sessionInfoAll.trialDuration = sessionInfoAll.trialDuration + sessionInfoAll.preTrialTime;
 
+end    
+
+waveformDiff % calculates the differential of the waveform and the slope at 0.5 ms after trough
+clusterTimeSeriesAll_backup = clusterTimeSeriesAll;
 %% 
+clusterTimeSeriesAll = clusterTimeSeriesAll_backup;
+%%% !!!!! Comment out 2 of the next 3 lines !!!!! %%%
+classUnitsAll = ([cellMetricsAll.troughPeakTime]< 0.5) + 1; % subject to change - different criteria; 1 = pyr, 2 = inh
+% fClassifyUnits % cluster the data
+% fClassifyUnitsCellExplorer
+layerAll = (realDepthAll < 0) + (realDepthAll < -100) + (realDepthAll < -320)*2+(realDepthAll < -400); 
+
 %%%%%%%%%%% apply filters to the unit data set here %%%%%%%%%%%%%%%%
 
 iUnitsFilt = repelem(true(1), size(cellMetricsAll.waveformCodes,1)); % all units
 iUnitsFilt = iUnitsFilt &  clusterTimeSeriesAll.iSelectedCodesInd == 1; % only selected = 1
-% iUnitsFilt = iUnitsFilt & clusterTimeSeriesAll.iSelectedCodesIndSpont == 0 ; % only evoked = 0 or spont = 1
+% iUnitsFilt = iUnitsFilt & clusterTimeSeriesAll.iSelectedCodesIndSpont == 1; % only evoked = 0 or spont = 1
 % iUnitsFilt = iUnitsFilt &  classUnitsAll == 1; % only specifiy cell type: 1 = exc, 2 = inh
+% iUnitsFilt = iUnitsFilt &  layerAll' == 5; % choose layer between 1, 2, 4 and 5
+% iUnitsFilt = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 4)>0; % run the next section before uncommenting this line
+% iUnitsFilt = iUnitsFilt & pSuaBaseAll(totalConds/2,:, 4)<0.05; % run the next section before uncommenting this line
 
 saveFigs = false;
-savePath = [strjoin({path{1:end}, 'figs','2021-04'}, filesep), filesep];% 'NexCre', 'long', 'spont'
+savePath = [strjoin({path{1:end}, 'figs','2022-01',  'PvCre', 'long','evoked', 'exc'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% , 'Gad2Cre','short', 'evoked'
 totalUnits = size(iUnitsFilt,2);
 totalUnitsFilt = sum(iUnitsFilt);
@@ -164,17 +227,29 @@ totalUnitsFilt = sum(iUnitsFilt);
 disp(['Total units: ', num2str(totalUnitsFilt)]);
 disp(['Total excitatory units: ', num2str(sum(classUnitsAll(iUnitsFilt) == 1)), ' = ', num2str(sum(classUnitsAll(iUnitsFilt) == 1)/totalUnitsFilt*100), '%']);
 disp(['Total inhibitory units: ', num2str(sum(classUnitsAll(iUnitsFilt) == 2)), ' = ', num2str(sum(classUnitsAll(iUnitsFilt) == 2)/totalUnitsFilt*100), '%']);
+disp(['Total wide inhibitory units: ', num2str(sum(classUnitsAll(iUnitsFilt) == 3)), ' = ', num2str(sum(classUnitsAll(iUnitsFilt) == 3)/totalUnitsFilt*100), '%']);
+
 %% Analysis
 
+analyzeBy = 'unit'; %, 'unit', 'exp', 'hem', 'animal'
 thresholdFreq = 0.5 % selection threshold in Hz - Figs 2, 4, 11-12, ....
-longBase = 1 % choose between 1= long baseline(2 or 3 s) and 0 = short baseline (1 s)
-analysis_allExpDataVisualization % !!!choose between 6a and 6b and possibly other analysis - under construction; fix fig 14 b bug
+longBase = 0 % choose between 1= long baseline(2 or 3 s) and 0 = short baseline (1 s)
+groupData;
+applyBonfCorr = 1;
+analysis_allExpDataVisualization_A2 % !!!choose between 6a and 6b and possibly other analysis - under construction; fix fig 14 b bug
+
 %% Plot figures
 
 figure1 % ! average of time courses evoked activity 100% contrast and spontaneous activity
+figure1b % ! average of time courses evoked activity 100% contrast and spontaneous activity for paper
+figure1c % subtr + average of time courses evoked activity 100% contrast and spontaneous activity for paper
 figure2 % ! Norm average of time courses evoked activity 100% contrast and spontaneous activity
+figure2b % Subtr + Norm average of time courses evoked activity 100% contrast and spontaneous activity
+figure2c % ! subplot: Subtr + Norm average of time courses evoked activity 100% contrast and spontaneous activity
 figure3 % average baseline frequency 
+figure3b % ! Average baseline for stim 4
 figure4 % ! Average normalized baseline 
+figure4b % ! Average normalized baseline for stim 4
 figure5a % average amplitude 
 figure5b % average amplitude: if totalStim == 1
 figure6a % average normalized amplitude: if totalStim == 1
@@ -182,12 +257,20 @@ figure6b % ! average normalized amplitude - all data in one graph in comparison 
 figure7a % ! opto-index bar plot with p value for baselines (10x)
 figure7b % Opto-index indivdual data points with average and errorbars - comparison baselines between before and during photostim. 
 figure7d % Opto-index indivdual data points with average and errorbars - comparison baselines between before and during photostim. as 7b, but markers for each cell type
-figure7e % ! opto-index histocounts for baselines - cell types (10x)
+figure7dx % !Opto-index indivdual data points with average and errorbars - comparison baselines between before and during photostim. as 7b, but markers for each cell type
+figure7e % opto-index histocounts for baselines - cell types (10x)
+figure7f % OIbase vs depth
+figure7g % histograms of opto-index for each cell type and PDFs
+figure7gxx % ! thin histograms of opto-index for each cell type and PDFs
 figure9a % ! opto-index bar plot with p value for amplitudes
 figure9b % Opto-index indivdual data points with average and errorbars - comparison evoked responses between before and during photostim. 
+figure9f % OIampl vs depth
+figure7g % histograms of Ampl opto-index for each cell type and PDFs
 figure11a % ! opto-index bar plot with p value for combined baselines (5x)
 figure11b % Opto-index indivdual data points with average and errorbars - comparison combined baselines between before and during photostim.: if totalStim == 1
 figure11e % ! histograms of opto-index of combined baselines for each cell type
+figure11f % OIbaseComb vs depth
+figure11g % histograms of opto-index comb base for each cell type and PDFs
 figure13a % average amplitude - baseline
 figure13c % average amplitude - baseline on normalized traces
 figure14a % average normalized amplitude -baseline
@@ -198,7 +281,10 @@ figure16b % base2 vs base3 combined: if totalStim == 1
 figure16c % base1 vs base3 combined: if totalStim == 1
 figure16d % base1 vs base4: if totalStim == 6
 figure16e % base1 vs base4: if totalStim == 6
-figure16f % linear model, base1 vs base 3 
+figure16f % linear model 4 params, base1 vs base 3 
+figure16fx % linear model 4 params, base1 vs base 3 - coefficients
+figure16g % linear model 4 params, ampl1 vs ampl4 3 
+figure16h % linear model 7 params 
 figure17 % average combined baseline frequency: if totalStim == 1
 figure18 % !Average normalized combined baseline if totalStim == 1
 figure19a % ampl1 vs ampl4: if totalStim == 6
@@ -206,13 +292,32 @@ figure20 % average of time courses - combined contrasts (prev fig 19, short): if
 figure21 % Norm combined traces to the combined baseline (prev fig 20, short): if totalStim == 1
 % figure22 % traces of visual evoked - sponateneous activity
 % figure23 % normalized traces of visual evoked - sponateneous activity
-figure25ax % totalStim = 6; reproduction of fig 5a from eLife 2020 (average of baseline-subtracted and norm traces)
-figure25b % totalStim = 6; reproduction of fig 5bi from eLife 2020 (average amplitude of normalized and baseline subtr traces)
-figure25c % totalStim = 6; reproduction of fig 5bii from eLife 2020 (average baseline of normalized and baseline subtr traces)
-figure25d % totalStim = 6; reproduction of fig 5biii from eLife 2020 (average magnitude of normalized and baseline subtr traces)
+figure25ax % ! totalStim = 6; reproduction of fig 5a from eLife 2020 (average of baseline-subtracted and norm traces)
+figure25b % ! totalStim = 6; reproduction of fig 5bi from eLife 2020 (average amplitude of normalized and baseline subtr traces)
+figure25c % ! totalStim = 6; reproduction of fig 5bii from eLife 2020 (average baseline of normalized and baseline subtr traces)
+figure25d % ! totalStim = 6; reproduction of fig 5biii from eLife 2020 (average magnitude of normalized and baseline subtr traces)
+figure25dx % ! totalStim = 6; average magnitude of normalized and baseline subtr traces, stims 1 and 4
+figure25dxx % ! totalStim = 6; average magnitude of normalized and baseline subtr traces, stim 4
+figure25dxxx % ! bar plot of magnitude, related to fig 5biii from eLife 2020, all stims (average magnitude of normalized and baseline subtr traces)
+figure25e % ! totalStim = 6; average magnitude of non-normalized traces
+figure25ex % ! totalStim = 6; average magnitude of non-normalized traces, stims 1 and 4
 figure26ax % ! totalStim = 1; reproduction of fig 8a from eLife 2020 (average of baseline-subtracted and norm traces )
 figure26bx % ! totalStim = 1; reproduction of fig 8c from eLife 2020 (average of baseline-subtracted and norm traces to max in their own group )
-figure26c % totalStim = 1; reproduction of fig 8di(1) from eLife 2020 (average amplitude of normalized and baseline subtr traces)
-figure26d % totalStim = 1; reproduction of fig 8di(2) from eLife 2020 (average amplitude of normalized and baseline subtr traces)
-figure26e % totalStim = 1; reproduction of fig 8bi from eLife 2020 (average magnitude of normalized and baseline subtr traces)
-
+figure26c % ! totalStim = 1; reproduction of fig 8di(1) from eLife 2020 (average amplitude of normalized and baseline subtr traces)
+figure26d % ! totalStim = 1; reproduction of fig 8di(2) from eLife 2020 (average amplitude of normalized and baseline subtr traces)
+figure26e % ! totalStim = 1; reproduction of fig 8bi from eLife 2020 (average magnitude of normalized and baseline subtr traces)
+figure27a % totalStim = 1; similar to fig 26c, but for each individual unit
+figure27b % totalStim = 1; similar to fig 26d, but for each individual unit
+figure29a % ! Bar plot, average normalized baseline to same stim in the control condition
+figure29b % ! Bar plot, average normalized magnitue to same stim in the control condition
+figure30a % ! Bar plot, baseline of the trace that represents the difference of the normalized traces
+figure30b % ! Bar plot, magnitude of the trace that represents the difference of the normalized traces
+figure30bx % ! Bar plot, difference of magnitude between the normalized traces  (magn =1 and not peak =1)
+figure30bxx % ! Thin Bar plot, difference of magnitude between the normalized traces  (magn =1 and not peak =1)
+figure30bxxx % ! Line plot, difference of magnitude between the normalized traces  (magn =1 and not peak =1)
+figure31a % ! similar to fig 2, but for selected OI
+figure31b % ! similar to fig 4b, but for selected OI
+figure32bxxx % Plot line, difference of magnitude between the normalized traces, OI sel  (magn =1 and not peak =1)
+figure33 % plots the effect of photostim vs the visually evoked response (reproduction of Mohammad's figure
+figure50a % % waveforms for the ccg graph 
+figure50b % histogram instead of traces of firing rates

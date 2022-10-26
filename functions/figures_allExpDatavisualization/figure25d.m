@@ -14,7 +14,7 @@ figure
 
 ax = gca;
 hold on
-conds = [1,2,6];
+conds = [1,2];% [1,2,6]
 if totalStim == 6
     for cond = conds
         plot((1:totalStim),meanAllStimMagnNormTracesBaseSubtr100(cond, :),'Marker','.','LineWidth', 3, 'Color', C(cond,:)); hold on
@@ -24,20 +24,20 @@ if totalStim == 6
             for stim = 1:totalStim
                 p_temp =  pAllStimMagnNormTracesBaseSubtr100(cond/2, stim);
                 y = min(meanAllStimMagnNormTracesBaseSubtr100(conds, stim)-STEMallStimMagnNormTracesBaseSubtr100(conds, stim));
-                yf = 0.95;
-                if p_temp <= 0.001
-                    text(stim, y*yf-cond/100,'***','FontSize',10, 'Color', C(cond,:), 'HorizontalAlignment','center');
+                yf = 0.85;
+                if p_temp <= 0.001 %y*yf-cond/100 below 
+                    text(stim, y*yf,'***','FontSize',fsStars, 'Color', C(cond,:), 'HorizontalAlignment','center');
                 elseif p_temp <= 0.01
-                    text(stim, y*yf-cond/100,'**','FontSize',10, 'Color', C(cond,:), 'HorizontalAlignment','center');
+                    text(stim, y*yf,'**','FontSize',fsStars, 'Color', C(cond,:), 'HorizontalAlignment','center');
                 elseif p_temp <= 0.05
-                    text(stim, y*yf-cond/100,'*','FontSize',10, 'Color', C(cond,:), 'HorizontalAlignment','center');
+                    text(stim, y*yf,'*','FontSize',fsStars, 'Color', C(cond,:), 'HorizontalAlignment','center');
                 end
             end
         end
     end
     xlabel('Stim #')
     set(ax,'XLim',[0.8 totalStim+0.2],'FontSize',fs);  
-% elseif totalStim == 1 % copied from fig 6b and not midfied yet
+% elseif totalStim == 1 % copied from fig 6b and not modfied yet
 %     plot((1:totalConds/2-1),meanNormAllStimAmpl100(1:2:end-2, :),'Marker','.','LineWidth', 3, 'Color', C(1,:)); hold on
 %     plot((1:totalConds/2-1),meanNormAllStimAmpl100(2:2:end-2, :),'Marker','.','LineWidth', 3, 'Color', C(2,:)); hold on
 %     xlabel('Contrast');
@@ -61,7 +61,7 @@ if totalStim == 6
 end
 max_hist1 = max(max(meanAllStimMagnNormTracesBaseSubtr100))*1.5;
 
-ylabel('Norm. magnitude');
+ylabel('Magnitude (normalized)');
 set(ax,'xtick',[1:1:numel(baseStim)]) % set major ticks
 set(ax, 'TickDir', 'out');
 set(ax,'YLim',[0 max_hist1]);
@@ -77,7 +77,7 @@ if saveFigs == true
     savefig(strcat(savePath, saveFig25d{1}));
     title('');
     saveas(gcf, strcat(savePath, saveFig25d{1}(1:end-3), 'png'));
-    
+    saveas(gcf, strcat(savePath, saveFig25d{1}(1:end-4)), 'epsc');
 end
 
 

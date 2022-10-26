@@ -16,17 +16,23 @@ elseif totalStim == 1
 
     saveFig2 = {'meanNormTC100All.fig', 'meanNormTC50All.fig','meanNormTC25All.fig','meanNormTC12All.fig','meanNormTC0All.fig'};
 end
-for cond = (1:2:totalConds)
+for cond = (1:2:totalConds)%(1:2:totalConds-2)
     figure
     ax = gca;
     hold on
-    plot((plotBeg:bin:plotEnd), meanNormTraceFreqAll(cond,:),'LineWidth', 3, 'Color', C(1,:)); hold on
-    plot((plotBeg:bin:plotEnd), meanNormTraceFreqAll(cond+1,:),'LineWidth', 3, 'Color', C(2,:)); hold on
-
-    max_hist1 = 1.5 * max(max(meanNormTraceFreqAll(cond:cond+1,:)));
+    plot((plotBeg:bin:plotEnd), meanNormTraceFreqAllAdj(cond,:),'LineWidth', 3, 'Color', C(cond,:)); hold on
+    plot((plotBeg:bin:plotEnd), meanNormTraceFreqAllAdj(cond+1,:),'LineWidth', 3, 'Color', C(cond+1,:)); hold on
+    if cond == totalConds-1
+        max_hist1 = 2.5;%1.5 * max(max(meanNormTraceFreqAllAdj(cond:cond+1,:)));
+    else
+        max_hist1 =1.5;
+    end    
     min_hist = -0.5;
-    xlabel('Time [sec]');
-    ylabel('Norm. avg. sp. freq.');
+    if cond == totalConds-1
+        min_hist = 0.5;
+    end    
+    xlabel('Time (s)');
+    ylabel('Firing rate (normalized)');
     set(ax,'XLim',[plotBeg plotEnd],'FontSize',fs);
     set(ax, 'TickDir', 'out');
     set(ax,'YLim',[min_hist max_hist1],'FontSize',fs)
@@ -43,11 +49,12 @@ for cond = (1:2:totalConds)
         end
     end
     set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
-    shadedErrorBar1((plotBeg:bin:plotEnd),meanNormTraceFreqAll(cond,:),STEMnormTraceFreqAll(cond,:), {'Color', C(1,:)}); hold on
-    shadedErrorBar1((plotBeg:bin:plotEnd),meanNormTraceFreqAll(cond+1,:),STEMnormTraceFreqAll(cond+1,:), {'Color', C(2,:)}); hold on
+    shadedErrorBar1((plotBeg:bin:plotEnd),meanNormTraceFreqAllAdj(cond,:),STEMnormTraceFreqAllAdj(cond,:), {'LineWidth', 3,'Color', C(cond,:)}); hold on
+    shadedErrorBar1((plotBeg:bin:plotEnd),meanNormTraceFreqAllAdj(cond+1,:),STEMnormTraceFreqAllAdj(cond+1,:), {'LineWidth', 3,'Color', C(cond+1,:)}); hold on
     if saveFigs == true
         savefig(strcat(savePath, saveFig2{(cond+1)/2}));
         title('');
         saveas(gcf, strcat(savePath, saveFig2{(cond+1)/2}(1:end-3), 'png'));
+        saveas(gcf, strcat(savePath, saveFig2{(cond+1)/2}(1:end-4)), 'epsc');
     end
 end

@@ -13,4 +13,5 @@ std_ch = timeSeries.stdCh;
 range1 = timeSeries.range1;
 range2 = timeSeries.range2;
 subTrialsForAnalysis = timeSeries.subTrialsForAnalysis;
-ts = timeSeries.ts;
+% ts = timeSeries.ts;
+trialsForAnalysis = timeSeries.trialsForAnalysis;

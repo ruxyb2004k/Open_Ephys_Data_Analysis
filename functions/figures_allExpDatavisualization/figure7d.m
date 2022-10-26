@@ -48,7 +48,8 @@ for cond = (1:2:totalConds)
         title(titleFig7d{(cond+1)/2*5+(stim-6)},'FontSize',18);
         background = get(gcf, 'color');
         set(gcf,'color','white'); hold on
-        set(gca,'FontSize',24, 'XTickLabel',{'Without photostim.','With photostim.'},'XTick',[1 2]);
+%         set(gca,'FontSize',24, 'XTickLabel',{'Without photostim.','With photostim.'},'XTick',[1 2]);
+%         set(gca,'FontSize',24, 'XTickLabel',{'Exc. cells','Inh. cells'},'XTick',[1 2]);
         errorbar((1.1),meanOIndexAllStimBase((cond+1)/2, stim),STEMOIndexAllStimBase((cond+1)/2, stim),'.k','LineWidth',2);
         errorbar((1.15),meanOIndexAllStimBaseExc((cond+1)/2, stim),STEMOIndexAllStimBaseExc((cond+1)/2, stim),'.g','LineWidth',2);
         errorbar((1.15),meanOIndexAllStimBaseInh((cond+1)/2, stim),STEMOIndexAllStimBaseInh((cond+1)/2, stim),'.r','LineWidth',2);

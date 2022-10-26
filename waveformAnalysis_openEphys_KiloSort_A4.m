@@ -46,7 +46,7 @@ dataPoints = timeSeries.dataPoints;
 % med = zeros(channelNo,1);
 med = timeSeries.medCh;
 samplingRate = sessionInfo.rates.wideband;
-dataFilt = int16(zeros(sessionInfo.nChannels, numel(timeSeries.range1)));
+dataFilt = int16(zeros(1, numel(timeSeries.range1)));%int16(zeros(sessionInfo.nChannels, numel(timeSeries.range1)));
 % artefactCh = 7;
 
 for i=(1:channelNo)
@@ -98,7 +98,7 @@ iMinCh = nan(channelNo, numel(codes));
 waveformCodeChannelNew = nan(1,numel(codes));
 waveformFiltAvgCh = nan(numel(codes),dataPointsWindow+1,channelNo);
 shiftCodes = [];
-% shiftCodes = [88];
+% shiftCodes = [58];
 
 for ind = (1:numel(codes)) % for each selected code
     waveformCode = codes(ind); 
@@ -211,6 +211,7 @@ cellMetrics.troughPeakTime = troughPeakTime;
 cellMetrics.peakAsymmetry = peakAsymmetry;
 cellMetrics.waveformCodeChannelNew = waveformCodeChannelNew ;
 % cellMetrics.invWf = invWf;
+disp('Inverted spikes:');
 spikeClusterData.goodCodes(cellMetrics.polarity>0)
 clearvars data data_ch datasub timestamps timeSeries waveformDataPoints waveformTimes
 %%
@@ -257,6 +258,8 @@ spikes.spindices = [spikeClusterData.times(ids), idGoodCodes(ids)]; % Nx2 matrix
 if spikes.numcells
     detectInh = true; % true if inhibitory connection detection is wanted, false otherwise
     mono_res = ce_MonoSynConvClick(spikes,'includeInhibitoryConnections',detectInh); % detects the monosynaptic connections
+    spikeClusterData.goodCodes(mono_res.sig_con_excitatory_all)
+    spikeClusterData.goodCodes(mono_res.sig_con_inhibitory_all)
     mono_res = gui_MonoSyn(mono_res); % Shows the GUI for manual curation
     
     putativeConnections.excitatory = mono_res.sig_con_excitatory; % copy this field into the putativeConnections structure
@@ -359,8 +362,8 @@ saveas(gcf, strcat(savePathFigs, filesep, 'troughPeakTimeVsPeakAsymConnections.f
 
 %% modify if needed - fill in the next 2 lines
 %%% if no modification is needed, running this section doesn't change anything 
-% [mono_res, putativeConnections] = removeConnections([2, 29], 'exc', mono_res, putativeConnections)
-% [mono_res, putativeConnections] = removeConnections([], 'inh', mono_res, putativeConnections)
+% [mono_res, putativeConnections] = removeConnections([19, 14], 'exc', mono_res, putativeConnections)
+% [mono_res, putativeConnections] = removeConnections([16,9], 'inh', mono_res, putativeConnections)
 
 cellMetrics.mono_res = mono_res;
 cellMetrics.putativeConnections = putativeConnections;
@@ -379,7 +382,7 @@ cellMetrics.visitedCh = visitedCh;
 
 % if file too large:
 s = whos('cellMetrics');
-if s.bytes >= 2.5*10^9
+if s.bytes >= 2*10^9
     cellMetrics.waveformDataFilt = [];
     warning('waveformDataFilt was emptied')
 end    

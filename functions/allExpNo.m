@@ -5,7 +5,9 @@ categs = {'animalStrain', 'trialDuration'}; % specify here 2 categories for the 
 
 sel(1,:) = [expSet.expSel1] == 1; % first experiment selection
 sel(2,:) = [expSet.expSel2] == 1; % 2nd experiment selection
+sel(3,:) = [expSet.expSel3] == 1; % 2nd experiment selection
 selF = and(sel(1,:), sel(2,:))'; % only selected experiments
+% selF = (sel(1,:) & sel(2,:) & sel(3,:))'; % only selected experiments
 
 for i = 1:numel(categs) % for the categories 'animalStrain', 'trialDuration'
     categ = categs{i};

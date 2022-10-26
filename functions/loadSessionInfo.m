@@ -17,5 +17,5 @@ animal = sessionInfo.animal;
 recRegion = sessionInfo.recRegion;
 chOffset = sessionInfo.chOffset;
 samplingRate = sessionInfo.rates.wideband;
-visStimDuration = sessionInfo.visStimDuration;
+% visStimDuration = sessionInfo.visStimDuration;
 condData = sessionInfo.condData;

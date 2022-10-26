@@ -51,7 +51,7 @@ for cond = (1:2:totalConds)
 %         histogram(OIndexAllStimBase((cond+1)/2,inhUnits, stim), edges, 'FaceColor', [1 1 1], 'EdgeColor', [1 0 0]);
 %         title(titleFig7e{(cond+1)/2*(numel(baseStim)-1)+(stim-numel(baseStim))},'FontSize',18);
         
-        f = figure('Renderer', 'painters', 'Position', [680 558 320 420])     
+        f = figure('Renderer', 'painters', 'Position', [680 558 320 420]);     
 %         f.Position
         [histExc] = histcounts(OIndexAllStimBase((cond+1)/2,excUnits, stim),edges);
         [histInh] = histcounts(OIndexAllStimBase((cond+1)/2,inhUnits, stim),edges);
