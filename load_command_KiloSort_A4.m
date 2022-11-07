@@ -1,5 +1,5 @@
 %%% load raw data and create session metadata %%%
-%%% written by RB 31.10.2022 %%%
+%%% written by RB 07.11.2022 %%%
 %%% update: loades previously saved experiment
 
 % SECTION 1
