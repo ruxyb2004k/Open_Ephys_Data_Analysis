@@ -1,6 +1,7 @@
 %%% plot PSTH and Raster plot of spikes for all conditions %%%
 %%% It can be executed after spikedataloading.m %%%
 %%% modified 25.02.2019 by Ruxandra %%%
+% SECTION 1
 
 % experimentName = '2021-01-13_11-14-23'
 % sessionName = 'V1_20210113_1'
@@ -112,7 +113,8 @@ for cond = (1:totalConds)
         end
     end
 end
-%% plot NEW figures - good codes
+%% SECTION 2
+% plot NEW figures - good codes
 
 %%%%%%%%% change parameters here %%%%%%%%%
 % selectedCodesIndUser = (1:numel(goodCodes)); % it will not be considered if it's empty or commented out
@@ -305,7 +307,8 @@ end
 statsCodesInd = 1:numel(goodCodes);
 statsSuaF % Stats 1
 
-%% Calculations on selected codes
+%% SECTION 3
+% Calculations on selected codes
 disp('Calculations on selected codes')
 selectedCodesInd = find(respMat ~=3);
 selectedCodes = goodCodes(selectedCodesInd); % selected codes 
@@ -326,7 +329,9 @@ traceFreqGoodSel = trace(:, selectedCodesInd, :)/bin/totalTrials;
 
 writeClusterTimeSeriesSua 
 
-%% Stats 2 + partial save
+%% SECTION 4
+% Stats 2 + partial save
+
 disp('Stats 2 + partial save')
 statsCodesInd = selectedCodesInd;%
 statsSuaF
@@ -334,13 +339,15 @@ writeClusterTimeSeriesSuaSel
 
 save(filenameClusterTimeSeries, 'clusterTimeSeries')
 
-%% plot NEW figures - mua codes
+%% SECTION 5
+% plot NEW figures - mua codes
 
 
 %%%%%%%%% change parameters here %%%%%%%%%
-selectedCodesIndMuaUser = (1:numel(muaCodes)/4); % it will not be considered if it's empty or commented out
-% [~,~,ib] = intersect([93,131,98,128],spikeClusterData.muaCodes); % insert in the array the mua codes from kilosort
-% selectedCodesIndMuaUser = ib';
+% selectedCodesIndMuaUser = (1:numel(muaCodes)/4); % it will not be considered if it's empty or commented out
+unitIDs = [48];
+[~,~,ib] = intersect(unitIDs ,spikeClusterData.muaCodes); % insert in the array the mua codes from kilosort
+selectedCodesIndMuaUser = ib';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if exist('selectedCodesIndMuaUser', 'var') && ~isempty(selectedCodesIndMuaUser) 
@@ -521,7 +528,8 @@ end
 statsCodesIndMua = (1:numel(muaCodes));
 statsMuaF
 
-%% Calculations on selected Muas
+%% SECTION 6
+% Calculations on selected Muas
 disp('Calculations on selected Muas');
 selectedCodesIndMua = find(respMatMua ==1);
 selectedCodesMua = muaCodes(selectedCodesIndMua); % selected codes 
@@ -533,7 +541,8 @@ traceFreqMua = traceMua(:, 1:numel(muaCodes), :)/bin/totalTrials;
 traceFreqMuaSel = traceMua(:, selectedCodesIndMua, :)/bin/totalTrials;
 
 writeClusterTimeSeriesMua 
-%% stats 2 + save
+%% SECTION 7
+% stats 2 + save
 
 statsCodesIndMua = selectedCodesIndMua;%
 statsMuaF
@@ -550,65 +559,73 @@ end
 excelData
 openvar('excel')
 
-%% Plot NEW figure - average figure
+%% SECTION 8
+% Plot NEW figure - average figure
 
-% meanTr = meanTrace;
-meanTr = meanTraceMua;
-
-figure
-subplot(2,1,1, 'align');
-for cond = (1:totalConds)
-    plot((plotBeg+bin:bin:plotEnd), meanTr(cond, :), 'Color', C(cond,:), 'LineWidth', 3); hold on
+for i = 1:2
+    if i == 1
+        meanTr = meanTrace;
+        figTitle = 'Avg good units';
+        figName = 'MeanAllCondTrace.fig';
+    else 
+        meanTr = meanTraceMua;
+        figTitle = 'Avg MUA';
+        figName = 'MeanAllCondTraceMua.fig';
+    end    
+    
+    figure  
+    subplot(2,1,1, 'align');
+    for cond = (1:totalConds)
+        plot((plotBeg+bin:bin:plotEnd), meanTr(cond, :), 'Color', C(cond,:), 'LineWidth', 3); hold on
+    end
+    box off
+    % xlabel('Time [sec]');
+    ylabel('Count');
+    %     set('facecolor',[1 0 1]);
+    %     set('BinEdges',[-preTrialTime:bin:trialDuration+afterTrialTime]); % trialDuration+afterTrialTime
+    ax = gca;
+    set(ax,'XLim',[plotBeg+bin plotEnd+bin],'FontSize',24);
+    set(ax, 'TickDir', 'out');
+    set(ax,'xtick',[]); % set major ticks %floor(plotBeg)
+    %     set(ax,'YLim',[0 max(h.Values)],'FontSize',24);
+    set(ax,'FontSize',24);
+    background = get(gcf, 'color');
+    % set(gcf,'color','white');
+    yl = ylim;
+    h1 = line([optStimInterval(1) optStimInterval(1)],[0 yl(2)]); %max(h.Values) %max(sum(meanTrace(:,:),1))
+    h2 = line([optStimInterval(2) optStimInterval(2)],[0 yl(2)]);
+    set([h1 h2],'Color','c','LineWidth',1)% Set properties of lines
+    for i = 1:size(x,1)
+        h3 = line('XData',x(i,:),'YData', [yl(2) yl(2)]); %line([-2.4 -2.2],[fact*max_hist2 fact*max_hist2]);
+        set(h3,'Color',[0.85 0.85 0.85] ,'LineWidth',4);% Set properties of lines
+    end
+    % patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1) ],[0 0 max(max(meanTrace(:,:))) max(max(meanTrace(:,:)))],'c', 'EdgeColor', 'none'); % Add a patch
+    % set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
+    
+    subplot(2,1,2, 'align');
+    plot((plotBeg+bin:bin:plotEnd),sum(meanTr(1:2:end,:),1),'Color', 'k','LineWidth',2);
+    hold on
+    plot((plotBeg+bin:bin:plotEnd),sum(meanTr(2:2:end,:),1),'Color', 'b','LineWidth',2);
+    yl = ylim;
+    h1 = line([optStimInterval(1) optStimInterval(1)],[0 yl(2)]); %max(h.Values) %max(sum(meanTrace(:,:),1))
+    h2 = line([optStimInterval(2) optStimInterval(2)],[0 yl(2)]);
+    set([h1 h2],'Color','c','LineWidth',1)% Set properties of lines
+    for i = 1:size(x,1)
+        h3 = line('XData',x(i,:),'YData', [yl(2) yl(2)]); %line([-2.4 -2.2],[fact*max_hist2 fact*max_hist2]);
+        set(h3,'Color',[0.85 0.85 0.85] ,'LineWidth',4);% Set properties of lines
+    end
+    ax = gca;
+    set(ax,'XLim',[plotBeg+bin plotEnd+bin],'FontSize',24);
+    set(ax, 'TickDir', 'out');
+    set(ax,'xtick',[0:5:floor(plotEnd)]); % set major ticks % [floor(plotBeg):5:floor(plotEnd)]
+    box off
+    xlabel('Time [sec]');
+    ylabel('Count');
+    title(figTitle)
+    if saveFigs == true
+        savefig(strcat(savePathFigs, filesep, figName));
+    end
 end
-box off
-% xlabel('Time [sec]');
-ylabel('Count');
-%     set('facecolor',[1 0 1]);
-%     set('BinEdges',[-preTrialTime:bin:trialDuration+afterTrialTime]); % trialDuration+afterTrialTime
-ax = gca;
-set(ax,'XLim',[plotBeg+bin plotEnd+bin],'FontSize',24);
-set(ax, 'TickDir', 'out');
-set(ax,'xtick',[0:5:floor(plotEnd)]); % set major ticks %floor(plotBeg)
-%     set(ax,'YLim',[0 max(h.Values)],'FontSize',24);
-set(ax,'FontSize',24);
-background = get(gcf, 'color');
-% set(gcf,'color','white');
-yl = ylim;
-h1 = line([optStimInterval(1) optStimInterval(1)],[0 yl(2)]); %max(h.Values) %max(sum(meanTrace(:,:),1))
-h2 = line([optStimInterval(2) optStimInterval(2)],[0 yl(2)]);
-set([h1 h2],'Color','c','LineWidth',1)% Set properties of lines
-for i = 1:size(x,1)
-    h3 = line('XData',x(i,:),'YData', [yl(2) yl(2)]); %line([-2.4 -2.2],[fact*max_hist2 fact*max_hist2]);
-    set(h3,'Color',[0.85 0.85 0.85] ,'LineWidth',4);% Set properties of lines
-end
-% patch([optStimInterval(1) optStimInterval(2) optStimInterval(2) optStimInterval(1) ],[0 0 max(max(meanTrace(:,:))) max(max(meanTrace(:,:)))],'c', 'EdgeColor', 'none'); % Add a patch
-% set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
-
-subplot(2,1,2, 'align');
-plot((plotBeg+bin:bin:plotEnd),sum(meanTr(1:2:end,:),1),'Color', 'k','LineWidth',2);
-hold on
-plot((plotBeg+bin:bin:plotEnd),sum(meanTr(2:2:end,:),1),'Color', 'b','LineWidth',2);
-yl = ylim;
-h1 = line([optStimInterval(1) optStimInterval(1)],[0 yl(2)]); %max(h.Values) %max(sum(meanTrace(:,:),1))
-h2 = line([optStimInterval(2) optStimInterval(2)],[0 yl(2)]);
-set([h1 h2],'Color','c','LineWidth',1)% Set properties of lines
-for i = 1:size(x,1)
-    h3 = line('XData',x(i,:),'YData', [yl(2) yl(2)]); %line([-2.4 -2.2],[fact*max_hist2 fact*max_hist2]);
-    set(h3,'Color',[0.85 0.85 0.85] ,'LineWidth',4);% Set properties of lines
-end
-ax = gca;
-set(ax,'XLim',[plotBeg+bin plotEnd+bin],'FontSize',24);
-set(ax, 'TickDir', 'out');
-set(ax,'xtick',[0:5:floor(plotEnd)]); % set major ticks % [floor(plotBeg):5:floor(plotEnd)]
-box off
-xlabel('Time [sec]');
-ylabel('Count');
-
-if saveFigs == true
-%     savefig(strcat(savePathFigs, filesep, 'MeanAllCondTrace.fig'));
-    savefig(strcat(savePathFigs, filesep, 'MeanAllCondTraceMua.fig'));
-end
-
 %% plot NEW figures - noise codes
 % 
 % C = ['r', 'g', 'b', 'y', 'm', 'k'];

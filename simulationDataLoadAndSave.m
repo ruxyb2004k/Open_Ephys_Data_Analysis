@@ -1,12 +1,13 @@
 %%% Created by RB on 07.04.2022
-%%% Run this script after running read_pickle.py
 %%% Read and analyze the model data from Mohammad
+%%% Run this script after running read_pickle.py
+%%% Then run simulationDataAnalysis.m
 
 clear all
 %close all
-saveData = false;
-filePath = '/data/oidata/Ruxandra/Simulation Data Analysis/';
-exps = {'ActivatingExc-200', 'ActivatingInh-200'};%, 'ActivatingBoth-50'};
+saveData = true;
+filePath = '/data/oidata/Ruxandra/Simulation Data Analysis/Raw data 3/';
+exps = {'ActivatingExc25-200', 'ActivatingInh100-200'};%, 'ActivatingBoth-50'};
 keys1 = [0, 10, 20, 30, 40];% 0, 25, 50, 75, 100%
 keys2 = {'inh', 'exc'};
 event_times = [1000, 2000, 3000, 3500]/1000;
@@ -16,6 +17,10 @@ allYLim = [];
 
 data_combined_mean = nan(numel(keys1), numel(keys2), round(4000/bin));
 
+% for each exp, it reads numel(keys1)*numel(keys2) .mat files, in this case 10
+% and it saves another two .mat files: 
+% exp_type, '_',num2str(bin), '.mat' - contains the mean
+% exp_type, '_',num2str(bin), '_all_units.mat' - contains data from each unit
 for exp = exps
     exp_type = char(exp);
     
@@ -26,7 +31,7 @@ for exp = exps
         subplot(1,5,i)
         j = 1;
         for key2 = keys2           
-            mat_file = [filePath,'Raw data 1/', exp_type, '-', num2str(round(key1/40*100)), char(key2), '.mat'];
+            mat_file = [filePath, exp_type, '-', num2str(round(key1/40*100)), char(key2), '.mat'];
             load(mat_file) % dims: sim, no. units, data points
             [sims, no_units, datapoints] = size(data);
             

@@ -2,14 +2,14 @@
 %%% Run this script after running simulationDataLoadAndSave.m
 % Load individual unit data and plot traces
 
-saveFigs = false;
+saveFigs = true;
 clearvars AxesHandle
-filePath = '/data/oidata/Ruxandra/Simulation Data Analysis/';
+filePath = '/data/oidata/Ruxandra/Simulation Data Analysis/mat files/';
 % exps = {'ActivatingExc', 'ActivatingInh', 'ActivatingBoth'};
 keys1 = [0, 10, 20, 30, 40];% 0, 25, 50, 75, 100%
 % keys2 = {'inh', 'exc'};
 unitType = 1; % 1 = inh, 2 = exc
-exps = {'ActivatingBoth'}; %-200
+exps = {'ActivatingInh100-200'}; %-200
 keys2 = {'exc'}; % irrelevant, unitType is relevant
 bin = 20;
 time_stamps = ((bin:bin:4000)/1000)';
@@ -74,7 +74,7 @@ iUnitsFilt = repelem(true(1), totalUnits); % all units
 fs = 24; %font size
 
 path = strsplit(pwd,filesep);
-savePath = [strjoin({path{1:end}, 'figs','2022-06',  char(exps)}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
+savePath = [strjoin({path{1:end}, 'figs','2022-11',  char(exps)}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
 
 % generate graphs with colors specific for the respective mouse-cell combination
 
@@ -262,7 +262,7 @@ for unitType = 1:2% 1 = exc, 2 = inh
 end
 
 % pause(1)
-% figure4bMod
+figure4bModx
 %% try normalized average instead of average of normalized values - quite similar to the other option
 % 
 % meanAllStimPhoto(:,1) =  mean(allStimPhoto(:, classUnitsAll==1),2);
@@ -372,7 +372,7 @@ for unitType = 1:2
 end
 
 % pause(1)
-% figure30bxxxMod
+figure30bxxxModx
 %% amplitude quantification
 
 allStimAmpl = nan(totalConds, totalUnits);

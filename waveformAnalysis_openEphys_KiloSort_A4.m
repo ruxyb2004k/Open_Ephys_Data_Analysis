@@ -1,6 +1,7 @@
 %%% Waveform shape and clustering
 %%% developed by RB on 22.04.2021
 %%% uses spikeClusterData1.mat and traceFreqAndInfo1.mat (run SpikeDataLoading_openEphys.m and PlotPSTHandRaster_openEphys.m)
+% SECTION 1
 
 clearvars -except experimentName sessionName k expSetFilt
 close all
@@ -98,7 +99,7 @@ iMinCh = nan(channelNo, numel(codes));
 waveformCodeChannelNew = nan(1,numel(codes));
 waveformFiltAvgCh = nan(numel(codes),dataPointsWindow+1,channelNo);
 shiftCodes = [];
-% shiftCodes = [58];
+% shiftCodes = [23];
 
 for ind = (1:numel(codes)) % for each selected code
     waveformCode = codes(ind); 
@@ -214,8 +215,9 @@ cellMetrics.waveformCodeChannelNew = waveformCodeChannelNew ;
 disp('Inverted spikes:');
 spikeClusterData.goodCodes(cellMetrics.polarity>0)
 clearvars data data_ch datasub timestamps timeSeries waveformDataPoints waveformTimes
-%%
+%% SECTION 2
 %calculate ACG fit, putative cell type and putative connections
+
 close all
 spikes.numcells = numel(spikeClusterData.goodCodes);
 for i = 1: spikes.numcells
@@ -281,17 +283,20 @@ spikeClusterData.goodCodes(cellMetrics.mono_res.sig_con_excitatory_all)
 spikeClusterData.goodCodes(cellMetrics.mono_res.sig_con_inhibitory_all)
 spikeClusterData.goodCodes(cellMetrics.putativeConnections.excitatory)
 spikeClusterData.goodCodes(cellMetrics.putativeConnections.inhibitory)
-%% plot more figures all waveforms
+%% SECTION 3
+% plot more figures all waveforms
 
 codes = spikeClusterData.goodCodes;
 figure; % all waveforms
 for i =1:numel(waveformFiltAvg(:,1))
     plot(waveformFiltAvg(i,:)); hold on
+    title('Waveforms')
 end    
 
 figure; % normalized waveforms to -1
 for i =1:numel(waveformFiltAvgNorm(:,1))
     plot(waveformFiltAvgNorm(i,:)); hold on
+    title('Normalized waveforms')
 end
 
 % non-selected codes = red; ev-codes = blue; spont=codes = green
@@ -360,7 +365,8 @@ xlabel('trough to peak (ms)');
 ylabel('peak asymmetry (P2-P1)/(P2+P1)') ;
 saveas(gcf, strcat(savePathFigs, filesep, 'troughPeakTimeVsPeakAsymConnections.fig'));
 
-%% modify if needed - fill in the next 2 lines
+%% SECTION 4
+% modify if needed - fill in the next 2 lines
 %%% if no modification is needed, running this section doesn't change anything 
 % [mono_res, putativeConnections] = removeConnections([19, 14], 'exc', mono_res, putativeConnections)
 % [mono_res, putativeConnections] = removeConnections([16,9], 'inh', mono_res, putativeConnections)
@@ -370,7 +376,8 @@ cellMetrics.putativeConnections = putativeConnections;
 
 spikeClusterData.goodCodes(cellMetrics.putativeConnections.excitatory)
 spikeClusterData.goodCodes(cellMetrics.putativeConnections.inhibitory)
-%% save waveform characteristics
+%% SECTION 5
+% save waveform characteristics
 
 close all
 

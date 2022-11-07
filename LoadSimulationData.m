@@ -5,7 +5,7 @@ clear all
 %close all
 saveData = false;
 filePath = '/data/oidata/Ruxandra/Simulation Data Analysis/';
-exps = {'ActivatingExc', 'ActivatingInh', 'ActivatingBoth'};
+exps = {'ActivatingExc'}%, 'ActivatingInh', 'ActivatingBoth'};
 keys1 = [0, 10, 20, 30, 40];% 0, 25, 50, 75, 100%
 keys2 = {'inh', 'exc'};
 event_times = [1000, 2000, 3000, 3500]/1000;

@@ -1,8 +1,6 @@
 %%% Load matlab data from open ephys kwik files. 
 %%% modified 13.07.2020 by Ruxandra %%%
-
-% experimentName = '2021-01-15_12-07-00'
-% sessionName = 'V1_20210115_1'
+% SECTION 1
 
 clearvars -except experimentName sessionName 
 %ks= get(gcf, 'UserData');ks.ops.fshigh = 300;ks.ops.Th = [10, 6];
@@ -67,7 +65,8 @@ if ~SCDexist
     openvar('spikeClusterData.uniqueCodes')
 end
 
-%% verify first in kilosort if the channels fit the cluster codes and insert manually the channel number...
+%% SECTION 2
+% verify first in kilosort if the channels fit the cluster codes and insert manually the channel number...
 if ~SCDexist
     % ...for each cluster code in 2nd column of spikeClusterData.uniqueCodes, then run the next command
     spikeClusterData.uniqueCodesChannel(:,1) = spikeClusterData.uniqueCodes(:,2);
@@ -116,7 +115,8 @@ if ~SCDexist
     end
  
 end
-%%
+%% SECTION 3
+
 % modify when selecting different trials than already selected in load_command
 % spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis([1:10]);
 
@@ -167,7 +167,7 @@ end
 if numel(spikeClusterData.trialsForAnalysisSelected) ~= numel(timeSeries.trialsForAnalysis)
     warning('Are you sure some trials should be missing? Check spikeClusterData.trialsForAnalysisSelected on line 120 ');
 end    
-%%
+%% SECTION 4
 if exist(filenameSpikeClusterData,'file')
     warning('.spikeClusterData.mat file already exists.')
 else
