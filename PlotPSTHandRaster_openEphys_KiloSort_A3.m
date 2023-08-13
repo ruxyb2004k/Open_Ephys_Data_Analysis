@@ -344,8 +344,8 @@ save(filenameClusterTimeSeries, 'clusterTimeSeries')
 
 
 %%%%%%%%% change parameters here %%%%%%%%%
-% selectedCodesIndMuaUser = (1:numel(muaCodes)/4); % it will not be considered if it's empty or commented out
-unitIDs = [48];
+% selectedCodesIndMuaUser = (1:numel(muaCodes)/2); % it will not be considered if it's empty or commented out
+unitIDs = [];
 [~,~,ib] = intersect(unitIDs ,spikeClusterData.muaCodes); % insert in the array the mua codes from kilosort
 selectedCodesIndMuaUser = ib';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -625,6 +625,7 @@ for i = 1:2
     if saveFigs == true
         savefig(strcat(savePathFigs, filesep, figName));
     end
+    pause(1)
 end
 %% plot NEW figures - noise codes
 % 

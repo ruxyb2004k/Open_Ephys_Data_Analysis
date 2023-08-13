@@ -49,15 +49,18 @@ elseif strcmp(dataLM, 'magn')
     xlabel('Norm. magn. pre','FontSize',24); % modify here if needed
     ylabel('Norm. magn. post','FontSize',24); % modify here if needed
 end
-% xlabel('Firing rate pre (norm.)','FontSize',24); % labels for paper
-% ylabel('Firing rate post (norm.)','FontSize',24); % labels for paper
-  
-% xlim([0 1])
-% ylim([0 1])
+
 set(ax, 'TickDir', 'out');
 set(ax,'FontSize',fs)
+
+table_data1 = table(x1,y1,x2,y2);
+table_data1 = renamevars(table_data1 , ["x1", "y1", "x2", "y2"],...
+    ["CtrlPre", "CtrlPost","25%Pre", "25%Post"]);
+
+
 if saveFigs == true
     savefig(strcat(savePath, saveFig16fMod{1}));
     saveas(gcf, strcat(savePath, saveFig16fMod{1}(1:end-3), 'png'));
     saveas(gcf, strcat(savePath, saveFig16fMod{1}(1:end-4)), 'epsc');
+    writetable(table_data1, strcat(savePath, saveFig16fMod{1}(1:end-3), 'xlsx'),'Sheet',1, 'Range','A:C')
 end

@@ -6,8 +6,8 @@
 clear all
 global i x1 y1 y2 y3 recStartDataPoint z z_filt1 z_filt2 samplingRate
 
-experimentName = '2021-09-09_13-54-16_trial'
-sessionName = 'V1_20210909_2'
+experimentName = '2023-08-09_12-34-11'
+sessionName = 'V1_20230809_1'
 
 
 path = strsplit(pwd,filesep);
@@ -44,25 +44,25 @@ end
 tic
 %%%%%%% insert session-specific paramteres here %%%%%%%%%%
 
-recordingDepth = [-475 -345]'; % !!! Modify for each experiment !!!
+recordingDepth = [-280 -275]'; % !!! Modify for each experiment !!!
 channelNo = 32;%64;%
-probe = '2x16_E1';% '1x16_P1''2x32_H6';% 
-animal.name = '20210902_LV1';
-animal.sex = 'm';
-animal.strain = 'PvCre';%'Gad2Cre';
-animal.virus = 'AAV9-mOp2A';
+probe = '2x16_P1';% '1x16_P1''2x32_H6';% 
+animal.name = '20230731_RV1';
+animal.sex = 'f';
+animal.strain = 'PvCre';%'PvCre';%'Gad2Cre';
+animal.virus = 'AAV9-flx-mOp2A+AAV9-CaMKII-mOp2A';
 recRegion = animal.name(end-2:end);%e.g., 'RV1', 'LV1';
 chOffset = 16;%0; % 0 for 16- and 64-channel probes; 16 for 32-channel probe
 
 conditionNames= [];
 conditionNames.c100visStim = 1; % 
 conditionNames.c100optStim = 33; % 
-conditionNames.c50visStim = 3;
-conditionNames.c50optStim = 35;
-conditionNames.c25visStim = 5; % 
-conditionNames.c25optStim = 37; % 
-conditionNames.c12visStim = 7; % 
-conditionNames.c12optStim = 39; % 
+% conditionNames.c50visStim = 4;
+% conditionNames.c50optStim = 36;
+% conditionNames.c25visStim = 6; % 
+% conditionNames.c25optStim = 38; % 
+% conditionNames.c12visStim = 8; % 
+% conditionNames.c12optStim = 40; % 
 conditionNames.c0visStim = 0; 
 conditionNames.c0optStim = 32;
 
@@ -93,17 +93,17 @@ conditionNames.c0optStim = 32;
 
 afterTrialTime = 0; % time after trial for display
 
-% trialDuration = 18;% Long stimulation protocol (7)
-% preTrialTime = 3; % time before 0 for display
-% visStim = (0.2:3:15.2); 
-% optStimInterval = [2 10];
-% visStimDuration = 0.2;
-
-trialDuration = 9;% Contrast protocol (3)
-preTrialTime = 2; % time before 0 for display
-visStim = (7);
-optStimInterval = [0.2 8.2];
+trialDuration = 18;% Long stimulation protocol (7)
+preTrialTime = 3; % time before 0 for display
+visStim = (0.2:3:15.2); 
+optStimInterval = [2 10];
 visStimDuration = 0.2;
+
+% trialDuration = 9;% Contrast protocol (3)
+% preTrialTime = 2; % time before 0 for display
+% visStim = (7);
+% optStimInterval = [0.2 8.2];
+% visStimDuration = 0.2;
 
 % trialDuration = 6;% Contrast protocol (2)
 % preTrialTime = 2; % time before 0 for display
@@ -256,11 +256,23 @@ end
 toc
 fprintf('\n Channels with an outlier STD: \n')
 disp((find(std_ch > mean(std_ch) + 2*std(std_ch) | std_ch < mean(std_ch) - 2*std(std_ch)))')
+%%%% new %%%%%
+figure
+k = 1;
+for i= [1,5,7]
+    for j = [1,5,7] 
+        [tsOffsets, ts1idx, ts2idx] = crosscorrelogram(timestampsEv(dataEv ==i),timestampsEv(dataEv ==j),[0 10]);
+        subplot(3,3,k)
+        hist(tsOffsets, 1000);
+        k = k+1;
+    end
+end    
+    
 
 %% SECTION 3: Calculations for fig with epochs + plot figure
 close all
 
-selCh = 17; % selected channel for figure and calculation 
+selCh = 10; % selected channel for figure and calculation 
 totalEpochs = numel(condData.codes);
 
 std_z = zeros(totalEpochs,1);
@@ -371,7 +383,7 @@ linkdata(fig, 'on');
 
 % fill 'exclude' or leave it empty
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-exclude = [90,219]; %state here what subtrials you want to exclude
+exclude = []; %state here what subtrials you want to exclude
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -420,7 +432,7 @@ clearvars timeSeries
 tic
 % data_filt = int16(zeros(1, numel(range1))); % initialized with 1 line, but it will increase to channelNo
 gainCh = nan(channelNo, 1);
-artefactCh = 7;
+artefactCh = 5; %7
 m = 0;
 rf = sessionInfo.rates.wideband;
 artefactTimes = timestampsEv(dataEv == artefactCh);
@@ -457,7 +469,7 @@ parfor j = 1:channelNo
     data_filt_1 = highpass(data(range1), 150, rf); % highpass 150 Hz
     m = max([max(data_filt_1), abs(min(data_filt_1))]);
     gainCh(j)=suggestGain(m); % initial gain for each channel   
-    
+    %gainCh(j) = 50;
     tmpName{j} = [tempname, '.dat'];
     fileID = fopen(tmpName{j},'w');
     fwrite(fileID,data_filt_1*gainCh(j), 'int16');

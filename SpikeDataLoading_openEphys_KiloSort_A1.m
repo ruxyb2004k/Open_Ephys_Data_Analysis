@@ -3,7 +3,7 @@
 % SECTION 1
 
 clearvars -except experimentName sessionName 
-%ks= get(gcf, 'UserData');ks.ops.fshigh = 300;ks.ops.Th = [10, 6];
+% ks= get(gcf, 'UserData');ks.ops.fshigh = 300;ks.ops.Th = [10, 6];
 
 path = strsplit(pwd,filesep);
 basePath = strjoin({path{1:end-1}, 'Open Ephys Data', experimentName}, filesep);
@@ -118,7 +118,7 @@ end
 %% SECTION 3
 
 % modify when selecting different trials than already selected in load_command
-% spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis([1:10]);
+% spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis(2:end);
 
 conditionFieldnames = fieldnames(sessionInfo.conditionNames); % extract conditionNames (c0visStim c100visStim etc)
 totalConds = numel(conditionFieldnames);

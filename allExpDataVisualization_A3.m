@@ -11,12 +11,14 @@ filt = true(numFilt,size(expSet,2));
 %%%%%%% add filter here %%%%%%%
 
 filt(1,:) = [expSet.trialDuration] == 18; % Protocol type
-% filt(2,:) = strcmp({expSet.animalStrain}, 'NexCre'); % mouse line
-filt(2,:) = strcmp({expSet.animalStrain}, 'PvCre') |strcmp({expSet.animalStrain}, 'PvCre') ; % mouse line
+filt(2,:) = strcmp({expSet.animalStrain}, 'PvCre'); % mouse line
+%filt(2,:) = strcmp({expSet.animalStrain}, 'NexCre') |strcmp({expSet.animalStrain}, 'PvCre') ; % mouse line
 % filt(3,:) = strcmp({expSet.experimentName}, '2020-08-11_15-44-59');
 % filt(4,:) = ~(contains({expSet.experimentName}, '2020-11-12_14-20-47') | contains({expSet.experimentName}, '2020-12-01_13-58-50') | contains({expSet.experimentName},'2020-12-03_14-41-44'));
 % filt(5,:) = contains({expSet.animalName}, '20200730') | contains({expSet.animalName}, '20200805');
 % filt(6,:) = datetime({expSet.experimentName}, 'InputFormat','yyyy-MM-dd_HH-mm-ss')>datetime(2021,09,09); % exclude experiments before a certain date (yyyy, MM, dd)
+%filt(6,:) = strcmp({expSet.animalVirus}, 'AAV9-flx-mOp2A+AAV9-CaMKII-mOp2A');
+filt(6,:) = strcmp({expSet.animalVirus}, 'AAV9-mOp2A');
 filt(7,:) = [expSet.expSel1] == 1; % first experiment selection
 filt(8,:) = [expSet.expSel2] == 1; % 2nd experiment selection
 filt(9,:) = [expSet.expSel3] == 1; % 3rd experiment selection
@@ -235,14 +237,14 @@ layerAll = (realDepthAll < 0) + (realDepthAll < -100) + (realDepthAll < -320)*2+
 iUnitsFilt = repelem(true(1), size(cellMetricsAll.waveformCodes,1)); % all units
 iUnitsFilt = iUnitsFilt &  clusterTimeSeriesAll.iSelectedCodesInd == 1; % only selected = 1
 iUnitsFilt = iUnitsFilt & clusterTimeSeriesAll.iSelectedCodesIndSpont == 0; % only evoked = 0 or spont = 1
-% iUnitsFilt = iUnitsFilt &  classUnitsAll == 2; % only specifiy cell type: 1 = exc, 2 = inh
+iUnitsFilt = iUnitsFilt &  classUnitsAll == 1; % only specifiy cell type: 1 = exc, 2 = inh
 % iUnitsFilt = iUnitsFilt &  layerAll' == 5; % choose layer between 1, 2, 4 and 5
 % iUnitsFilt = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 4)>0; % run the next section before uncommenting this line
 % iUnitsFilt = iUnitsFilt & pSuaBaseAll(totalConds/2,:, 4)<0.05; % run the next section before uncommenting this line
 
 saveFigs = false;
-savePath = [strjoin({path{1:end}, 'figs','2022-07',  'NexCre', 'long','evoked', 'inh'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
-savePath = [strjoin({path{1:end}, 'figs','2022-02',  'all'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
+savePath = [strjoin({path{1:end}, 'figs','2023-06', 'PvCre', 'long','evoked', 'exc'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
+% savePath = [strjoin({path{1:end}, 'figs','2023-02',  'allEvoked'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% , 'Gad2Cre','short', 'evoked'
 totalUnits = size(iUnitsFilt,2);
 totalUnitsFilt = sum(iUnitsFilt);
@@ -256,7 +258,7 @@ disp(['Total wide inhibitory units: ', num2str(sum(classUnitsAll(iUnitsFilt) == 
 
 analyzeBy = 'unit'; %, 'unit', 'exp', 'hem', 'animal'
 thresholdFreq = 0.5 % selection threshold in Hz - Figs 2, 4, 11-12, ....
-longBase = 1 % choose between 1= long baseline(2 or 3 s) and 0 = short baseline (1 s)
+longBase = 1% choose between 1= long baseline(2 or 3 s) and 0 = short baseline (1 s)
 groupData;
 applyBonfCorr = 1;
 analysis_allExpDataVisualization_A2 % !!!choose between 6a and 6b and possibly other analysis - under construction; fix fig 14 b bug
@@ -269,10 +271,13 @@ figure1c % subtr + average of time courses evoked activity 100% contrast and spo
 figure2 % ! Norm average of time courses evoked activity 100% contrast and spontaneous activity
 figure2b % Subtr + Norm average of time courses evoked activity 100% contrast and spontaneous activity
 figure2c % ! subplot: Subtr + Norm average of time courses evoked activity 100% contrast and spontaneous activity
+figure2d
+figure2e % !
 figure3 % average baseline frequency 
 figure3b % ! Average baseline for stim 4
 figure4 % ! Average normalized baseline 
 figure4b % ! Average normalized baseline for stim 4
+figure4c % !
 figure5a % average amplitude 
 figure5b % average amplitude: if totalStim == 1
 figure6a % average normalized amplitude: if totalStim == 1
@@ -285,10 +290,12 @@ figure7e % opto-index histocounts for baselines - cell types (10x)
 figure7f % OIbase vs depth
 figure7g % histograms of opto-index for each cell type and PDFs
 figure7gxx % ! thin histograms of opto-index for each cell type and PDFs
+figure7k % !
 figure9a % ! opto-index bar plot with p value for amplitudes
 figure9b % Opto-index indivdual data points with average and errorbars - comparison evoked responses between before and during photostim. 
 figure9f % OIampl vs depth
 figure7g % histograms of Ampl opto-index for each cell type and PDFs
+figure7k % !
 figure11a % ! opto-index bar plot with p value for combined baselines (5x)
 figure11b % Opto-index indivdual data points with average and errorbars - comparison combined baselines between before and during photostim.: if totalStim == 1
 figure11e % ! histograms of opto-index of combined baselines for each cell type
@@ -344,3 +351,4 @@ figure32bxxx % Plot line, difference of magnitude between the normalized traces,
 figure33 % plots the effect of photostim vs the visually evoked response (reproduction of Mohammad's figure
 figure50a % % waveforms for the ccg graph 
 figure50b % histogram instead of traces of firing rates
+figure51

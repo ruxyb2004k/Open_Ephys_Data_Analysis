@@ -17,7 +17,7 @@ elseif totalStim == 1
 end
 max_hist1 = 1.5 * max(max(meanTraceFreqAll(1:2,:)));
 
-for cond = (1:2:totalConds-2)%(1:2:totalConds-2)
+for cond = (1:2:totalConds)%(1:2:totalConds-2)
     max_hist1 = 1.2 * max(max(meanTraceFreqAll(cond:cond+1,:)));
 %     max_hist1 = 24;%20
     figure

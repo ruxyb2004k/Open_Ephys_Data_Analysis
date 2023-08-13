@@ -1,5 +1,5 @@
 %%% Created by RB on 21.06.2022
-%%% Run this script after running read_pickle.py
+%%% Run this script after running read_pickle_conductance.py
 %%% Read and analyze the conductance data from Mohammad's model
 
 clear all
@@ -30,14 +30,14 @@ for exp = exps
     title(exp_type)
 
     i = 1;
-    for key1 = keys1(1)    
+    for key1 = keys1   
         data_combined_all_units(i,1).g_ex = [];
         data_combined_all_units(i,2).g_ex = [];
         data_combined_all_units(i,1).g_in = [];
         data_combined_all_units(i,2).g_in = [];
         subplot(1,5,i)
         j = 1;
-        for key2 = keys2(1)           
+        for key2 = keys2           
             mat_file = [filePath, exp_type, '-pct-', num2str(round(key1/40*100)), '-sim-', num2str(key2), '.mat'];
             load(mat_file) % dims: sim, no. units, data points
              
@@ -94,10 +94,10 @@ for exp = exps
                 ylabel('Conductance (nS)')
             end
             
-            data_combined_all_units(i,1).g_ex = [data_combined_all_units(i,1).g_ex, data_exp_binned.g_ex(:,in_units)];
-            data_combined_all_units(i,2).g_ex = [data_combined_all_units(i,2).g_ex, data_exp_binned.g_ex(:,ex_units)];
-            data_combined_all_units(i,1).g_in = [data_combined_all_units(i,1).g_in, data_exp_binned.g_in(:,in_units)];
-            data_combined_all_units(i,2).g_in = [data_combined_all_units(i,2).g_in, data_exp_binned.g_in(:,ex_units)];
+            data_combined_all_units(i,1).g_ex = [data_combined_all_units(i,1).g_ex, data_exp_binned.g_ex(:,in_units)]; % exc conductance in inh units
+            data_combined_all_units(i,2).g_ex = [data_combined_all_units(i,2).g_ex, data_exp_binned.g_ex(:,ex_units)]; % exc conductance in exc units
+            data_combined_all_units(i,1).g_in = [data_combined_all_units(i,1).g_in, data_exp_binned.g_in(:,in_units)]; % inh conductance in inh units
+            data_combined_all_units(i,2).g_in = [data_combined_all_units(i,2).g_in, data_exp_binned.g_in(:,ex_units)]; % inh conductance in exc units
             
             j = j+1;
 
@@ -248,7 +248,7 @@ for unitType = 1:2% 1 is ex, 2 is in
     end
 end   
 
-%%    E/I conductance abs change during vis stim, normalized to the previous 1 s
+%% .   E/I conductance abs change during vis stim, normalized to the previous 1 s
 % calculations
 for cond = 1:totalConds
     for unitType = 1:2
@@ -273,3 +273,48 @@ for unitType = 1:2 % 1 is ex, 2 is in
 
 end   
      
+%% 09.03.2023
+% data_combined_all_units dim: (pct act neurons, cell type ) . g type (time points, cell no)
+% data_combined_all_units(i,1).g_ex = [data_combined_all_units(i,1).g_ex, data_exp_binned.g_ex(:,in_units)]; % exc conductance in inh units
+% data_combined_all_units(i,2).g_ex = [data_combined_all_units(i,2).g_ex, data_exp_binned.g_ex(:,ex_units)]; % exc conductance in exc units
+% data_combined_all_units(i,1).g_in = [data_combined_all_units(i,1).g_in, data_exp_binned.g_in(:,in_units)]; % inh conductance in inh units
+% data_combined_all_units(i,2).g_in = [data_combined_all_units(i,2).g_in, data_exp_binned.g_in(:,ex_units)]; % inh conductance in exc units
+
+%event_times 
+flag = 0; %normalization by n-1
+for cond = 1:totalConds
+    for unitType = 1:2% 1 is ex, 2 is in
+        for time = 1:numel(event_times)-1
+            std_data_combined_all_units(cond, unitType).g_ex(time,:) = nanstd(data_combined_all_units(cond, unitType).g_ex(event_times(time)*1000/bin+3:event_times(time+1)*1000/bin-3,:),flag,1);
+            std_data_combined_all_units(cond, unitType).g_in(time,:) = nanstd(data_combined_all_units(cond, unitType).g_in(event_times(time)*1000/bin+3:event_times(time+1)*1000/bin-3,:),flag,1);
+        end
+    end
+end
+
+for cond = 1:totalConds
+    for unitType = 1:2% 1 is ex, 2 is in
+        mean_std_data_combined_all_units(cond, unitType).g_ex = nanmean(std_data_combined_all_units(cond, unitType).g_ex,2);
+        mean_std_data_combined_all_units(cond, unitType).g_in = nanmean(std_data_combined_all_units(cond, unitType).g_in,2);        
+    end
+end
+
+% incremental increase for conductance STD depending on the % of activated neurons
+unitType_char = {'excitatory units', 'inhibitory units'};
+xdata = (0:totalConds-1)/(totalConds-1)*100;
+
+
+figure
+for unitType = 1:2% 1 is ex, 2 is in
+    subplot(2,1,unitType)
+    ax = gca;
+    for cond = 1:totalConds
+        scatter(xdata(cond), [mean_std_data_combined_all_units(cond, unitType).g_ex(2)], 100, '.g'); hold on, 
+        scatter(xdata(cond), [mean_std_data_combined_all_units(cond, unitType).g_in(2)], 100, '.r')
+    end    
+    set(ax,'XLim', [-5 100],'FontSize',fs-10);
+    set(ax,'xtick',(0:totalConds-1)/(totalConds-1)*100) % set major ticks
+    
+    title(unitType_char(unitType))
+end
+xlabel('% units with activated 5-HT_2_A ');
+ylabel('STD during photostim');

@@ -2,14 +2,18 @@
 %%% Run this script after running simulationDataLoadAndSave.m
 % Load individual unit data and plot traces
 
-saveFigs = true;
+clear all
+saveFigs = false;
 clearvars AxesHandle
 filePath = '/data/oidata/Ruxandra/Simulation Data Analysis/mat files/';
-% exps = {'ActivatingExc', 'ActivatingInh', 'ActivatingBoth'};
+%exps = {'ActivatingExc', 'ActivatingInh', 'ActivatingBoth'};
 keys1 = [0, 10, 20, 30, 40];% 0, 25, 50, 75, 100%
 % keys2 = {'inh', 'exc'};
 unitType = 1; % 1 = inh, 2 = exc
-exps = {'ActivatingInh100-200'}; %-200
+exps = {'ActivatingInh100-200'}; %used for the final version - 11.2022
+%exps = {'ActivatingExc-200'}; %used for the final version - 11.2022
+%exps = {'ActivatingBoth'}; %used for the final version - 11.2022
+% exps = {'ActivatingInh100Exc50'}; % mean-driven
 keys2 = {'exc'}; % irrelevant, unitType is relevant
 bin = 20;
 time_stamps = ((bin:bin:4000)/1000)';
@@ -74,34 +78,38 @@ iUnitsFilt = repelem(true(1), totalUnits); % all units
 fs = 24; %font size
 
 path = strsplit(pwd,filesep);
-savePath = [strjoin({path{1:end}, 'figs','2022-11',  char(exps)}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
+savePath = [strjoin({path{1:end}, 'figs','2023-06',  char(exps)}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
 
 % generate graphs with colors specific for the respective mouse-cell combination
+cCreAllColors = [213 94 0; 153,199,225; 239,191,170; 0,114,178; 0 255 0; 255 0 0]/255;
 
 %exps = {'ActivatingExc', 'ActivatingInh', 'ActivatingBoth'};
-if contains(char(exps), 'ActivatingExc')
-    cCreCellType(1,:) = [0 176 80]/255;% NexCre exc
-    cCreCellType(2,:) = [230 153 153]/255;% NexCre inh
-    marker = 's-';
-    lineBaseExc = 1.485; % experimental values
-    lineBaseInh = 1.708; % experimental values
-    lineMagnExc = 0.0663; % experimental values
-    lineMagnInh = 0.0402; % experimental values
-elseif contains(char(exps), 'ActivatingInh')
-    cCreCellType(1,:) = [153 224 185]/255;% PvCre exc
-    cCreCellType(2,:) = [192 0 0]/255;% PvCre inh
-    marker = 'o-';
-    lineBaseExc = 0.6457; % experimental values
-    lineBaseInh = 1.227; % experimental values
-    lineMagnExc = -0.2259; % experimental values
-    lineMagnInh = -0.1031; % experimental values
-elseif contains(char(exps), 'ActivatingBoth')
+if contains(char(exps), 'ActivatingBoth') || (contains(char(exps), 'Inh') && contains(char(exps), 'Exc'))
     cCreCellType(1,:) = [0 255 0]/255;% exc
     cCreCellType(2,:) = [255 0 0]/255;% inh
     lineBase = 1.06; % experimental values
     lineMagn = -0.21; % experimental values
     rangeMagn = [-0.21 -0.6785]; % experimental values
     marker = '*-';
+
+elseif contains(char(exps), 'ActivatingExc')
+    cCreCellType(1,:) = [213 94 0]/255;%[0 176 80]/255;% NexCre exc
+    cCreCellType(2,:) = [153,199,225]/255;%[230 153 153]/255;% NexCre inh
+    marker = 's-';
+    lineBaseExc = 1.485; % experimental values
+    lineBaseInh = 1.708; % experimental values
+    lineMagnExc = 0.0663; % experimental values
+    lineMagnInh = 0.0402; % experimental values
+    no_sample = [55,43]; % how many units to randomly sample: exc, inh
+elseif contains(char(exps), 'ActivatingInh')
+    cCreCellType(1,:) = [239,191,170]/255;%[153 224 185]/255;% PvCre exc
+    cCreCellType(2,:) = [0,114,178]/255;%[192 0 0]/255;% PvCre inh
+    marker = 'o-';
+    lineBaseExc = 0.6457; % experimental values
+    lineBaseInh = 1.227; % experimental values
+    lineMagnExc = -0.2259; % experimental values
+    lineMagnInh = -0.1031; % experimental values
+    no_sample = [53,70]; % how many units to randomly sample: exc, inh
 end
 % cCreCellType(1,:) = [0 176 80]/255;% NexCre exc
 % cCreCellType(2,:) = [192 0 0]/255;% PvCre inh
@@ -119,20 +127,20 @@ for unitType = 1:2
 end
 %% Test if the data was processed correctly
 % some of the plot commands work only after the next sections 
-% figure
-% for i = 1:5
-%     subplot(1,5,i)
-%     plot(time_stamps, squeeze(meanTraceFreqAll(i, 1, :)), '-r'); hold on
-%     plot(time_stamps, squeeze(meanTraceFreqAll(i, 2, :)), '-b'); hold on
-% %     plot(time_stamps, squeeze(nanmean(traceFreqAllMinusBase(i, classUnitsAll == 1,:),2)), '-r'); hold on
-% %     plot(time_stamps, squeeze(nanmean(traceFreqAllMinusBase(i, classUnitsAll == 2,:),2)), '-b'); hold on
-% %     plot(time_stamps, squeeze(nanmean(normTraceFreqAll(i, classUnitsAll == 1,:),2)), '-r'); hold on
-% %     plot(time_stamps, squeeze(nanmean(normTraceFreqAll(i, classUnitsAll == 2,:),2)), '-b'); hold on
-% %     plot(time_stamps, squeeze(meanNormTraceFreqAll(i,1,:)), '-r'); hold on
-% %     plot(time_stamps, squeeze(meanNormTraceFreqAll(i,2,:)), '-b'); hold on
-% %     plot(time_stamps, squeeze(meanNormTraceFreqAllAdj(i,1,:)), '-r'); hold on
-% %     plot(time_stamps, squeeze(meanNormTraceFreqAllAdj(i,2,:)), '-b'); hold on
-% end    
+figure
+for i = 1:5
+    subplot(1,5,i)
+    plot(time_stamps, squeeze(meanTraceFreqAll(i, 1, :)), '-r'); hold on
+    plot(time_stamps, squeeze(meanTraceFreqAll(i, 2, :)), '-b'); hold on
+%     plot(time_stamps, squeeze(nanmean(traceFreqAllMinusBase(i, classUnitsAll == 1,:),2)), '-r'); hold on
+%     plot(time_stamps, squeeze(nanmean(traceFreqAllMinusBase(i, classUnitsAll == 2,:),2)), '-b'); hold on
+%     plot(time_stamps, squeeze(nanmean(normTraceFreqAll(i, classUnitsAll == 1,:),2)), '-r'); hold on
+%     plot(time_stamps, squeeze(nanmean(normTraceFreqAll(i, classUnitsAll == 2,:),2)), '-b'); hold on
+%     plot(time_stamps, squeeze(meanNormTraceFreqAll(i,1,:)), '-r'); hold on
+%     plot(time_stamps, squeeze(meanNormTraceFreqAll(i,2,:)), '-b'); hold on
+%     plot(time_stamps, squeeze(meanNormTraceFreqAllAdj(i,1,:)), '-r'); hold on
+%     plot(time_stamps, squeeze(meanNormTraceFreqAllAdj(i,2,:)), '-b'); hold on
+end    
 
 %% Analysis for Fig. 2 (2x): average of normalized time courses
 % Baseline calculations  % dim: cond, unit, stim 
@@ -299,11 +307,26 @@ for unitType = 1:2 % 1 = exc, 2 = inh
 end
 
 %% test figure - histogram: efect of photo stim interval 
-% for cond = 1:5
-%     figure
-%     histogram(normAllStimPhoto(cond, classUnitsAll==1), 'FaceAlpha', 0.5,'Normalization','pdf'); hold on
-%     histogram(normAllStimPhoto(cond, classUnitsAll==2), 'FaceAlpha', 0.5,'Normalization','pdf')
-% end
+for cond = 1:5
+    figure
+    histogram(normAllStimPhoto(cond, classUnitsAll==1), 'FaceAlpha', 0.5,'Normalization','pdf'); hold on
+    histogram(normAllStimPhoto(cond, classUnitsAll==2), 'FaceAlpha', 0.5,'Normalization','pdf')
+end
+
+%% Analysis for fig 7j - violin plot of optoindex
+
+OIndexAllStimPhotoBase = nan(totalConds, totalUnits);
+
+for cond = 1:totalConds
+    for unit = find(baseSelect)%find(iUnitsFilt)%
+        if (allStimBase(cond, unit)+allStimPhoto(cond, unit)) ~= 0
+            OIndexAllStimPhotoBase(cond, unit) = (allStimPhoto(cond, unit)-allStimBase(cond, unit))/(allStimPhoto(cond, unit)+allStimBase(cond, unit)); 
+        end
+    end
+end
+
+figure7jModxx
+figure7jModxxx
 
 %% Analysis for Fig 25b - reproduction of fig 5bi from eLife 2020 (average amplitude of normalized and baseline subtr traces)
 % analysis for Fig 26c - reproduction of fig 8di(1) from eLife 2020 (average amplitude of normalized and baseline subtr traces)
@@ -387,9 +410,9 @@ end
 %% photo stim interval quantification
 
 
-cond = 5;
+cond = 2;
 norm = 1;
-unitType = 1;
+unitType = 1; % 1 = exc, 2 = inh
 unitsLR = classUnitsAll==unitType;%find(baseSelect);%find(OInegUnits);%
 x1 = allStimPhoto(1, unitsLR)'; % no photostim cond, pre photostim
 x2 = allStimPhoto(1, unitsLR)'; % photostim cond, pre photostim
@@ -400,9 +423,9 @@ y2 = allStimPhoto(cond, unitsLR)'; % photostim cond, post photostim
 
 allStimMagn = allStimAmpl-allStimPhoto;
 
-cond = 4;
+cond = 2;
 norm = 1;
-unitType = 2;
+unitType = 1; % 1 = exc, 2 = inh
 unitsLR = classUnitsAll==unitType;%find(baseSelect);%find(OInegUnits);%
 x1 = allStimMagn(1, unitsLR)'; % no photostim cond, pre photostim
 x2 = allStimMagn(1, unitsLR)'; % photostim cond, pre photostim
@@ -445,6 +468,8 @@ meanAllStimMagnNormTracesBaseSubtr100Subtr = normMeanAllStimMagn - 1;
 norm = 1;
 exclude0 = 1;
 excludeOutliers = 0;
+sampleUnits = 1; 
+no_sample(unitType)
 thOut = 0.23;
 totalCoeffs = 4;
 dataLM = 'magn';% 'base', 'ampl', 'magn' 
@@ -465,12 +490,24 @@ if exclude0  % exclude trials with 0 in pre or post stim
     x2 = x2(ind12);
     y2 = y2(ind12);    
 end
+
 if norm % normalize data to the max value in the data set
     maxData = max([x1;x2]) 
     x1 = x1/maxData; 
     y1 = y1/maxData;
     x2 = x2/maxData;
     y2 = y2/maxData;
+end
+
+if sampleUnits
+    rng('default') % controlling randomness
+    s = rng;
+    ind_sample = randperm(numel(x1));
+    ind_final = ind_sample(1:no_sample(unitType));
+    x1 = x1(ind_final);
+    y1 = y1(ind_final);
+    x2 = x2(ind_final);
+    y2 = y2(ind_final);
 end
 
 if excludeOutliers  % exclude trials with 0 in pre or post stim
@@ -505,5 +542,5 @@ coeffsLM = table2array(mdl.Coefficients); % 4 params, 4 properties of coeffs
 coeffsLM1 = [coeffsLM(2,1), coeffsLM(1,1)]; % coefficients for x1,y1
 coeffsLM2 = [coeffsLM(2,1)+coeffsLM(4,1), coeffsLM(1,1)+coeffsLM(3,1)]; % coefficients for x2,y2
 
-% figure16fMod
-% figure16fxMod
+figure16fMod
+figure16fxMod

@@ -6,8 +6,9 @@
 clear all
 %close all
 saveData = true;
-filePath = '/data/oidata/Ruxandra/Simulation Data Analysis/Raw data 3/';
-exps = {'ActivatingExc25-200', 'ActivatingInh100-200'};%, 'ActivatingBoth-50'};
+filePath = '/data/oidata/Ruxandra/Simulation Data Analysis/Raw data 5/';
+% exps = {'ActivatingExc25-200', 'ActivatingInh100-200'};%, 'ActivatingBoth-50'};
+exps = {'ActivatingInh100Exc50'};%, 'ActivatingBoth-50'};
 keys1 = [0, 10, 20, 30, 40];% 0, 25, 50, 75, 100%
 keys2 = {'inh', 'exc'};
 event_times = [1000, 2000, 3000, 3500]/1000;

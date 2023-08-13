@@ -33,7 +33,7 @@ y2 = allStimAmpl(cond+1, iUnitsFilt, stimPost)'; % photostim cond, post photosti
 % y1 = allStimAmplNormTracesBaseSubtr(cond, iUnitsFilt,stimPost)';
 % y2 = allStimAmplNormTracesBaseSubtr(cond+1, iUnitsFilt,stimPost)';
 
-%% OR magnitude quantification
+%% OR magnitude quantification --- used for the manuscript
 cond = 1;
 baseSelect = allStimBase(cond,:,1) >= thresholdFreq ;
 cond = 1;

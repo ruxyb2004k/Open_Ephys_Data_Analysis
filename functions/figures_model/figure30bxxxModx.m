@@ -14,7 +14,7 @@ marker1 = '.-';
 marker2 = '.-';
 ms = 50;
 yl = [-1 0.25];
-if strcmp(char(exps), 'ActivatingBoth')
+if strcmp(char(exps), 'ActivatingBoth')|| (contains(char(exps), 'Inh') && contains(char(exps), 'Exc'))
     cCreCellType(1,:) = [0 0 255]/255;% exc
     cCreCellType(2,:) = [0 0 255]/255;% inh
     ms = 18;
@@ -27,7 +27,7 @@ figure
 ax = gca;
 hold on
 line([0 totalConds-1]/(totalConds-1)*100, [0 0], 'Color', [.5 .5 .5 ])
-if ~strcmp(char(exps), 'ActivatingBoth')
+if ~strcmp(char(exps), 'ActivatingBoth') && ~(contains(char(exps), 'Inh') && contains(char(exps), 'Exc'))
     line([0 totalConds-1]/(totalConds-1)*100, [lineMagnExc lineMagnExc],'Color',cCreCellType(1,:),'LineStyle','--','LineWidth',2);
     line([0 totalConds-1]/(totalConds-1)*100, [lineMagnInh lineMagnInh],'Color',cCreCellType(2,:),'LineStyle','--','LineWidth',2);
 else
