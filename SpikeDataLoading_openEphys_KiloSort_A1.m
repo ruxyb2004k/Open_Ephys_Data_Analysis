@@ -118,7 +118,8 @@ end
 %% SECTION 3
 
 % modify when selecting different trials than already selected in load_command
-% spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis(2:end);
+% spikeClusterData.trialsForAnalysisSelected = timeSeries.trialsForAnalysis([1:4,6,9,11:12,14:19,21,23:25]);
+% spikeClusterData.trialsForAnalysisSelected = spikeClusterData.trialsForAnalysisSelected([1,4:20,22:23]);
 
 conditionFieldnames = fieldnames(sessionInfo.conditionNames); % extract conditionNames (c0visStim c100visStim etc)
 totalConds = numel(conditionFieldnames);

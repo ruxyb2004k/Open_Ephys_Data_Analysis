@@ -12,16 +12,16 @@ filt = true(numFilt,size(expSet,2));
 
 filt(1,:) = [expSet.trialDuration] == 18; % Protocol type
 filt(2,:) = strcmp({expSet.animalStrain}, 'PvCre'); % mouse line
-%filt(2,:) = strcmp({expSet.animalStrain}, 'NexCre') |strcmp({expSet.animalStrain}, 'PvCre') ; % mouse line
+% filt(2,:) = strcmp({expSet.animalStrain}, 'NexCre') |strcmp({expSet.animalStrain}, 'PvCre') ; % mouse line
 % filt(3,:) = strcmp({expSet.experimentName}, '2020-08-11_15-44-59');
 % filt(4,:) = ~(contains({expSet.experimentName}, '2020-11-12_14-20-47') | contains({expSet.experimentName}, '2020-12-01_13-58-50') | contains({expSet.experimentName},'2020-12-03_14-41-44'));
 % filt(5,:) = contains({expSet.animalName}, '20200730') | contains({expSet.animalName}, '20200805');
 % filt(6,:) = datetime({expSet.experimentName}, 'InputFormat','yyyy-MM-dd_HH-mm-ss')>datetime(2021,09,09); % exclude experiments before a certain date (yyyy, MM, dd)
-%filt(6,:) = strcmp({expSet.animalVirus}, 'AAV9-flx-mOp2A+AAV9-CaMKII-mOp2A');
+% filt(6,:) = strcmp({expSet.animalVirus}, 'AAV9-flx-mOp2A+AAV9-CaMKII-mOp2A');
 filt(6,:) = strcmp({expSet.animalVirus}, 'AAV9-mOp2A');
 filt(7,:) = [expSet.expSel1] == 1; % first experiment selection
 filt(8,:) = [expSet.expSel2] == 1; % 2nd experiment selection
-filt(9,:) = [expSet.expSel3] == 1; % 3rd experiment selection
+filt(9,:) = [expSet.expSel3] == 1; % 3rd experiment selection % commented out for the superposition exps
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -77,7 +77,8 @@ for i =1:(size(expSetFilt,2))
     filenameClusterTimeSeries = fullfile(basePathMatlab,[sessionName,'.clusterTimeSeries.mat']); % cluster time series 
     filenameCellMetrics = fullfile(basePathMatlab,[sessionName,'.cellMetrics.mat']); % cell emtrics
     filenameOrientationMetrics = fullfile(basePathMatlab,[sessionName,'.orientationMetrics.mat']); % orientation metrics
-    %filenameLFP = fullfile(basePathMatlab,[sessionName,'.lfp1.mat']); % !!! LOAD lfp for NexCre, LFP1 for PvCre
+    % !!! LOAD lfp3.mat for NexCre, lfp1.mat for PvCre
+%     filenameLFP = fullfile(basePathMatlab,[sessionName,'.lfp1.mat']); 
 
     % try to load structures 
     [sessionInfo, SIexist] = tryLoad('sessionInfo', filenameSessionInfo);
@@ -86,7 +87,7 @@ for i =1:(size(expSetFilt,2))
     [clusterTimeSeries, CTSexist] = tryLoad('clusterTimeSeries', filenameClusterTimeSeries);
     [cellMetrics, CMexist] = tryLoad('cellMetrics', filenameCellMetrics);
     [orientationMetrics, OMexist] = tryLoad('orientationMetrics', filenameOrientationMetrics);
-%    [lfp, LFPexist] = tryLoad('lfp', filenameLFP);
+%     [lfp, LFPexist] = tryLoad('lfp', filenameLFP);
     
     clusterTimeSeries = adjustStruct(clusterTimeSeries); % add 2 extra fields: iSelectedCodesInd and iSelectedCodesIndSpont   
 
@@ -134,21 +135,21 @@ for i =1:(size(expSetFilt,2))
         sessionInfoAll = sessionInfo;
         timeSeriesAll = timeSeries;
         spikeClusterDataAll = spikeClusterData;
-        cellMetricsAll = cellMetrics;        
-        clusterTimeSeriesAll = clusterTimeSeries; 
+        cellMetricsAll = cellMetrics;
+        clusterTimeSeriesAll = clusterTimeSeries;
         orientationMetricsAll = orientationMetrics;
-%        lfpAll = lfp;
-%        lfpAll = rmfield(lfpAll, 'data'); % doesn't seem to free memory
-%        lfpAll = rmfield(lfpAll, 'timestamps'); % doesn't seem to free memory
+%         lfpAll = lfp;
+%         lfpAll = rmfield(lfpAll, 'data'); % doesn't seem to free memory
+%         lfpAll = rmfield(lfpAll, 'timestamps'); % doesn't seem to free memory
     else
         sessionInfoAll = addToStruct(sessionInfo, sessionInfoAll, allProt);
         timeSeriesAll = addToStruct(timeSeries, timeSeriesAll, allProt);
         spikeClusterDataAll = addToStruct(spikeClusterData, spikeClusterDataAll, allProt);
-        cellMetricsAll = addToStruct(cellMetrics, cellMetricsAll, allProt);       
-        clusterTimeSeriesAll = addToStruct(clusterTimeSeries, clusterTimeSeriesAll, allProt); 
+        cellMetricsAll = addToStruct(cellMetrics, cellMetricsAll, allProt);
+        clusterTimeSeriesAll = addToStruct(clusterTimeSeries, clusterTimeSeriesAll, allProt);
         orientationMetricsAll = [orientationMetricsAll orientationMetrics];
-%        lfpAll = addToStruct(lfp, lfpAll, allProt); 
-    end    
+%         lfpAll = addToStruct(lfp, lfpAll, allProt);
+    end
     
 end
 sessionInfoAll_backup = sessionInfoAll;
@@ -237,13 +238,13 @@ layerAll = (realDepthAll < 0) + (realDepthAll < -100) + (realDepthAll < -320)*2+
 iUnitsFilt = repelem(true(1), size(cellMetricsAll.waveformCodes,1)); % all units
 iUnitsFilt = iUnitsFilt &  clusterTimeSeriesAll.iSelectedCodesInd == 1; % only selected = 1
 iUnitsFilt = iUnitsFilt & clusterTimeSeriesAll.iSelectedCodesIndSpont == 0; % only evoked = 0 or spont = 1
-iUnitsFilt = iUnitsFilt &  classUnitsAll == 1; % only specifiy cell type: 1 = exc, 2 = inh
+iUnitsFilt = iUnitsFilt &  classUnitsAll == 2; % only specifiy cell type: 1 = exc, 2 = inh
 % iUnitsFilt = iUnitsFilt &  layerAll' == 5; % choose layer between 1, 2, 4 and 5
 % iUnitsFilt = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 4)>0; % run the next section before uncommenting this line
 % iUnitsFilt = iUnitsFilt & pSuaBaseAll(totalConds/2,:, 4)<0.05; % run the next section before uncommenting this line
 
 saveFigs = false;
-savePath = [strjoin({path{1:end}, 'figs','2023-06', 'PvCre', 'long','evoked', 'exc'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
+savePath = [strjoin({path{1:end}, 'figs','2024-07', 'PvCre', 'long', 'evoked', 'exc'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
 % savePath = [strjoin({path{1:end}, 'figs','2023-02',  'allEvoked'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% , 'Gad2Cre','short', 'evoked'
 totalUnits = size(iUnitsFilt,2);
@@ -278,6 +279,7 @@ figure3b % ! Average baseline for stim 4
 figure4 % ! Average normalized baseline 
 figure4b % ! Average normalized baseline for stim 4
 figure4c % !
+figure4e 
 figure5a % average amplitude 
 figure5b % average amplitude: if totalStim == 1
 figure6a % average normalized amplitude: if totalStim == 1
@@ -349,6 +351,7 @@ figure31a % ! similar to fig 2, but for selected OI
 figure31b % ! similar to fig 4b, but for selected OI
 figure32bxxx % Plot line, difference of magnitude between the normalized traces, OI sel  (magn =1 and not peak =1)
 figure33 % plots the effect of photostim vs the visually evoked response (reproduction of Mohammad's figure
+figure34a %!
 figure50a % % waveforms for the ccg graph 
 figure50b % histogram instead of traces of firing rates
 figure51

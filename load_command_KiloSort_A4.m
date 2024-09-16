@@ -6,8 +6,8 @@
 clear all
 global i x1 y1 y2 y3 recStartDataPoint z z_filt1 z_filt2 samplingRate
 
-experimentName = '2023-08-09_12-34-11'
-sessionName = 'V1_20230809_1'
+experimentName = '2023-08-25_15-23-23'
+sessionName = 'V1_20230825_2'
 
 
 path = strsplit(pwd,filesep);
@@ -44,10 +44,10 @@ end
 tic
 %%%%%%% insert session-specific paramteres here %%%%%%%%%%
 
-recordingDepth = [-280 -275]'; % !!! Modify for each experiment !!!
+recordingDepth = [-480 -430]'; % !!! Modify for each experiment !!!
 channelNo = 32;%64;%
-probe = '2x16_P1';% '1x16_P1''2x32_H6';% 
-animal.name = '20230731_RV1';
+probe = '2x16_E1';%'2x16_P1';% '1x16_P1''2x32_H6';% 
+animal.name = '20230818_LV1';
 animal.sex = 'f';
 animal.strain = 'PvCre';%'PvCre';%'Gad2Cre';
 animal.virus = 'AAV9-flx-mOp2A+AAV9-CaMKII-mOp2A';
@@ -378,7 +378,7 @@ but_h_prev = uicontrol('style', 'pushbutton',...
                     'callback', {@eg_fun_prev, edit_box_h});
                                  
 linkdata(fig, 'on');                 
-
+0
 %% SECTION 4
 
 % fill 'exclude' or leave it empty
@@ -469,7 +469,7 @@ parfor j = 1:channelNo
     data_filt_1 = highpass(data(range1), 150, rf); % highpass 150 Hz
     m = max([max(data_filt_1), abs(min(data_filt_1))]);
     gainCh(j)=suggestGain(m); % initial gain for each channel   
-    %gainCh(j) = 50;
+    %gainCh(j) = 10;
     tmpName{j} = [tempname, '.dat'];
     fileID = fopen(tmpName{j},'w');
     fwrite(fileID,data_filt_1*gainCh(j), 'int16');

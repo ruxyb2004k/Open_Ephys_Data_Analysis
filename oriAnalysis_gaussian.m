@@ -1,4 +1,8 @@
 % orientation experiment analysis
+
+experimentName = '2020-09-22_16-00-57'
+sessionName = 'V1_20200922_3'
+%%
 clearvars -except experimentName sessionName
 
 
@@ -250,6 +254,79 @@ end
 
 disp(spikeClusterData.goodCodes(selectedCodesByFitError)')
 
+%% Minimal diff between normalized magnitude (normPolarMeanMagnByTrial) and normalized amplitude (NormForGauss)
+
+meanBaseByTrial = squeeze(nanmean(clusterTimeSeries.baselineByTrial(:,:,:,3), 3));
+meanMagnByTrial = meanAmplByTrial - meanBaseByTrial;
+polarMeanMagnByTrial = [meanMagnByTrial; meanMagnByTrial(1:2,:)];
+normPolarMeanMagnByTrial = polarMeanMagnByTrial ./ max(polarMeanMagnByTrial);
+
+%% plot the polar plots
+
+figure
+
+angles_rad = deg2rad(0:30:360);
+for code = 1: totalCodes
+    subplot(m,m,code, 'align'); 
+
+    polarplot(deg2rad(allFitData(code).xDataDegrees), allFitData(code).NormForGauss(1:2:end), 'k', 'Linewidth', 2); hold on%%%%, 'MarkerSize', 20
+    polarplot(deg2rad(allFitData(code).xDataDegrees), allFitData(code).NormForGauss(2:2:end), 'b', 'Linewidth', 2);%%%% , 'MarkerSize', 20 
+    
+%     polarplot(angles_rad, normPolarMeanMagnByTrial(1:2:end, code), 'k', 'Linewidth', 2); hold on%%%%, 'MarkerSize', 20
+%     polarplot(angles_rad, normPolarMeanMagnByTrial(2:2:end, code), 'b', 'Linewidth', 2);%%%% , 'MarkerSize', 20 
+
+    thetaticks(0:90:270)
+    rticks(0:0.2:1)
+    rticklabels([])
+    
+    legend('off')
+    grid on
+    title(spikeClusterData.goodCodes(code), 'Color', titleColor(EItype(code)), 'Fontsize', 8); 
+end    
+if saveFigs == true
+    savefig(strcat(savePathGood,  filesep, 'polarPlots_all.fig'));
+end
+
+%% display polar plots for selected codes - figure for the paper 
+name_fig = 'polarPlots_selected.fig';
+selected_codes = [3,4,5,7,8,11];
+i = 1;
+figure
+
+% angles_rad = deg2rad(0:30:360);
+for code = selected_codes
+    subplot(2,3,i, 'align'); 
+
+    polarplot(deg2rad(allFitData(code).xDataDegrees), allFitData(code).NormForGauss(1:2:end), 'k', 'Linewidth', 2); hold on%%%%, 'MarkerSize', 20
+    polarplot(deg2rad(allFitData(code).xDataDegrees), allFitData(code).NormForGauss(2:2:end), 'b', 'Linewidth', 2);%%%% , 'MarkerSize', 20 
+%     polarplot(angles_rad, normPolarMeanMagnByTrial(1:2:end, code), 'k', 'Linewidth', 2); hold on%%%%, 'MarkerSize', 20
+%     polarplot(angles_rad, normPolarMeanMagnByTrial(2:2:end, code), 'b', 'Linewidth', 2);%%%% , 'MarkerSize', 20 
+    
+    thetaticks(0:90:270)
+    rticks(0:0.2:1)
+    rticklabels([])
+    
+    legend('off')
+    grid on
+    title(spikeClusterData.goodCodes(code), 'Color', titleColor(EItype(code)), 'Fontsize', 8); 
+    
+    A(:, 3*i-2) = allFitData(code).xDataDegrees;
+    A(:, 3*i-1) = allFitData(code).NormForGauss(1:2:end);
+    A(:, 3*i) = allFitData(code).NormForGauss(2:2:end);
+    
+    i = i+1;
+end  
+
+
+table_data1 = array2table(A);
+
+if saveFigs == true
+    savefig(strcat(savePathGood,  filesep, name_fig));
+    saveas(gcf, strcat(savePathGood,  filesep, name_fig(1:end-3), 'png'));
+    saveas(gcf, strcat(savePathGood,  filesep, name_fig(1:end-4)), 'epsc');
+    writetable(table_data1, strcat(savePathGood,  filesep, name_fig(1:end-3), 'xlsx'),'Sheet',1)
+end
+
 %% process data for plotting Tuning Width, Direction selectivity & Preferred Orientation
 for code = 1:totalCodes
     % X is f1, Y is f2
@@ -335,6 +412,37 @@ ylabel('light on')
 offset = 0.005*axis.XLim(2);
 for code = 1:totalCodes
     text(PrefOri_All(code,1)-offset,PrefOri_All(code,2),num2str(code),'FontSize', 8);
+end
+
+%% Prefered orientation for selected codes - figure for the paper 
+
+name_fig = 'pref_ori.fig';
+selected_codes = [3,4,5,7,8,11];
+
+figure
+scatter(PrefOri_All(selected_codes,1),PrefOri_All(selected_codes,2), 200, '.k'); hold on
+pbaspect([1 1 1]);
+axis = gca;
+maxAxis = max([axis.XLim, axis.YLim]);
+line([0 maxAxis],[0 maxAxis],'Color',[0.8 0.8 0.8]);
+title('Preferred orientation (°)');
+xlabel('light off')
+ylabel('light on')
+offset = 0.02*axis.XLim(2);
+for code = selected_codes
+    text(PrefOri_All(code,1)+offset,PrefOri_All(code,2),num2str(spikeClusterData.goodCodes(code)), 'Color', titleColor(EItype(code)),'FontSize', 8);
+end
+
+val1(:, 1) = PrefOri_All(selected_codes,1);
+val1(:, 2) = PrefOri_All(selected_codes,2);
+    
+table_data1 = array2table(val1);
+
+if saveFigs == true
+    savefig(strcat(savePathGood,  filesep, name_fig));
+    saveas(gcf, strcat(savePathGood,  filesep, name_fig(1:end-3), 'png'));
+    saveas(gcf, strcat(savePathGood,  filesep, name_fig(1:end-4)), 'epsc');
+    writetable(table_data1, strcat(savePathGood,  filesep, name_fig(1:end-3), 'xlsx'),'Sheet',1)
 end
 
 %%

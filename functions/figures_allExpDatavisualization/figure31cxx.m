@@ -51,6 +51,19 @@ for cond = totalConds-1
     errorbar(xval(3),yval(3),STEMval(3),'.','Color', C(cond,:),'LineWidth', 3); hold on
     errorbar(xval(4),yval(4),STEMval(4),'.','Color', cCreCellType,'LineWidth', 3); hold on
 
+    % beeswarm graph   
+    if size(normAllStimBaseOIpos,2) <= 10 
+        idx = repmat(xval(1:2), numel(normAllStimBaseOIpos(cond,:, stim)), 1);
+        idx = idx(:);
+        plotSpread(squeeze(normAllStimBaseOIpos(cond:cond+1,:, stim))','distributionIdx', idx,...
+            'categoryIdx',idx, 'categoryMarkers',{'o', 'o'},'categoryColors',[0,0,0; 0,0,0],'spreadWidth', 0.5)%
+    end
+    if size(normAllStimBaseOIneg,2) <= 10 
+        idx = repmat(xval(3:4), numel(normAllStimBaseOIneg(cond,:, stim)), 1);
+        idx = idx(:);
+        plotSpread(squeeze(normAllStimBaseOIneg(cond:cond+1,:, stim))','distributionIdx', idx,...
+            'categoryIdx',idx, 'categoryMarkers',{'o', 'o'},'categoryColors',[0,0,0; 0,0,0],'spreadWidth', 0.5)%
+    end
     
     %     xlabel('Stim#');
     ylabel('Firing rate (norm.) ');

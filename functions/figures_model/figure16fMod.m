@@ -62,5 +62,5 @@ if saveFigs == true
     savefig(strcat(savePath, saveFig16fMod{1}));
     saveas(gcf, strcat(savePath, saveFig16fMod{1}(1:end-3), 'png'));
     saveas(gcf, strcat(savePath, saveFig16fMod{1}(1:end-4)), 'epsc');
-    writetable(table_data1, strcat(savePath, saveFig16fMod{1}(1:end-3), 'xlsx'),'Sheet',1, 'Range','A:C')
+    writetable(table_data1, strcat(savePath, saveFig16fMod{1}(1:end-3), 'xlsx'),'Sheet',1, 'Range','A:D')
 end

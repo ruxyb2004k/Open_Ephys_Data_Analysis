@@ -5,7 +5,7 @@
 
 saveFigs = false;
 saveStats = false;
-savePath = [strjoin({path{1:end}, 'figs','2022-02',  'PvCre', 'long','lfp'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
+savePath = [strjoin({path{1:end}, 'figs','2024-01',  'PvCre', 'long','lfp'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
 
 % provisional time line
 T = (lfp.SpectrParams.window/ 2 /lfp.SpectrParams.Fs:...

@@ -50,10 +50,21 @@ for cond = 1:totalConds
 
     title(titleFig61a{cond},'FontSize',18);
    
+    val1 = [T', 10*log10(abs(squeeze(P_all_mean(cond,:,:))))'];
+
+        
+    table_data1 = array2table(val1);
+    
+    allVars = 1:width(table_data1);
+    newNames =  ["Time (s)", string(F)];
+    
+    table_data1 = renamevars(table_data1, allVars, newNames);
+    
     if saveFigs == true
         savefig(strcat(savePath, saveFig61a{cond}));
         title('');
         saveas(gcf, strcat(savePath, saveFig61a{cond}(1:end-3), 'png'));
         saveas(gcf, strcat(savePath, saveFig61a{cond}(1:end-4)), 'epsc');
+        writetable(table_data1, strcat(savePath, saveFig61a{cond}(1:end-3), 'xlsx'),'Sheet',1)
     end
 end

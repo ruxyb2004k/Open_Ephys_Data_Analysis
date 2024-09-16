@@ -63,10 +63,26 @@ for cond = 1:2:totalConds
     end  
     box off
     
+    
+    freq = f(dpInt)';
+    val1 = [freq, squeeze(P1_shortMeanAll(:,cond,dpInt))'];
+    val2 = [freq, squeeze(P1_shortMeanAll(:,cond+1,dpInt))'];
+    
+    table_data1 = array2table(val1);
+    table_data2 = array2table(val2);
+    
+    allVars = 1:width(table_data1);
+    newNames =  ["Frequency (Hz)", append("Exp. ", string(allVars(1:(end-1))))];
+    
+    table_data1 = renamevars(table_data1, allVars, newNames);
+    table_data2 = renamevars(table_data2, allVars, newNames);
+    
     if saveFigs == true
         savefig(strcat(savePath, saveFig60a{(cond+1)/2}));
         title('');
         saveas(gcf, strcat(savePath, saveFig60a{(cond+1)/2}(1:end-3), 'png'));
         saveas(gcf, strcat(savePath, saveFig60a{(cond+1)/2}(1:end-4)), 'epsc');
+        writetable(table_data1, strcat(savePath, saveFig60a{(cond+1)/2}(1:end-3), 'xlsx'),'Sheet',1)
+        writetable(table_data2, strcat(savePath, saveFig60a{(cond+1)/2}(1:end-3), 'xlsx'),'Sheet',2)
     end
 end

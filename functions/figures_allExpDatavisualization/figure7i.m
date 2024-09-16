@@ -85,6 +85,7 @@ for cond = 3%(1:2:totalConds)
             saveas(gcf, strcat(savePath, saveFig7i{cond*5+(stim-6)}(1:end-3), 'png'));
             saveas(gcf, strcat(savePath, saveFig7i{cond*5+(stim-6)}(1:end-4)), 'epsc');
             writetable(table_data1, strcat(savePath, saveFig7i{cond*5+(stim-6)}(1:end-3), 'xlsx'),'Sheet',1, 'Range','A:C')
+            writetable(table_data2, strcat(savePath, saveFig7i{cond*5+(stim-6)}(1:end-3), 'xlsx'),'Sheet',1, 'Range','D:F')
 
         end
     end

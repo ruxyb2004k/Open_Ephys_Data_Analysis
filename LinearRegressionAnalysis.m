@@ -33,7 +33,7 @@ y2 = allStimAmpl(cond+1, iUnitsFilt, stimPost)'; % photostim cond, post photosti
 % y1 = allStimAmplNormTracesBaseSubtr(cond, iUnitsFilt,stimPost)';
 % y2 = allStimAmplNormTracesBaseSubtr(cond+1, iUnitsFilt,stimPost)';
 
-%% OR magnitude quantification --- used for the manuscript
+%% OR magnitude quantification --- used for the manuscript (stimPost = 2:4)
 cond = 1;
 baseSelect = allStimBase(cond,:,1) >= thresholdFreq ;
 cond = 1;
@@ -45,6 +45,60 @@ x2 = allStimMagn(cond+1, unitsLR, 1)'; % photostim cond, pre photostim
 y1 = mean(allStimMagn(cond, unitsLR, stimPost),3)'; % no photostim cond, post photostim
 y2 = mean(allStimMagn(cond+1, unitsLR, stimPost),3)'; % photostim cond, post photostim
 
+%% OR magnitude quantification (totalStim = 1, 13.08.2023)
+cond = 3;
+contr = contrasts((cond+1)/2);
+baseSelect = allStimBase(cond,:,1) >= thresholdFreq ;
+% cond = 1;
+stimPost = 1;
+norm = 1;
+unitsLR = find(baseSelect);%find(OInegUnits);%
+x1 = allStimMagn(cond, unitsLR, 1)'; % no photostim cond, pre photostim
+x2 = allStimMagn(cond, unitsLR, 1)'; % photostim cond, pre photostim
+y1 = allStimMagn(cond, unitsLR, stimPost)'; % no photostim cond, post photostim
+y2 = allStimMagn(cond+1, unitsLR, stimPost)'; % photostim cond, post photostim
+
+%% OR magnitude quantification combined for all conditions (totalStim = 1, 03.10.2023)-- Fig. S9 after rebuttal
+
+cond = 1;
+contr = 1000;%contrasts((cond+1)/2);
+baseSelect = allStimBase(cond,:,1) >= thresholdFreq ;
+% cond = 1;
+stimPost = 1;
+norm = 1;
+unitsLR = find(baseSelect);%find(OInegUnits);%
+x1 = allStimMagn(1:2:totalConds-4, unitsLR, 1)'; % no photostim cond, pre photostim
+x2 = allStimMagn(1:2:totalConds-4, unitsLR, 1)'; % photostim cond, pre photostim
+y1 = allStimMagn(1:2:totalConds-4, unitsLR, stimPost)'; % no photostim cond, post photostim
+y2 = allStimMagn(2:2:totalConds-4, unitsLR, stimPost)'; % photostim cond, post photostim
+x1 = x1(:);
+x2 = x2(:);
+y1 = y1(:);
+y2 = y2(:);
+condsContrast = repmat((1:2:totalConds-4),numel(unitsLR),1);
+condsContrast = condsContrast(:);
+%% OR magnitude quantification (% suppr) combined for all conditions (totalStim = 1, 03.10.2023)
+
+cond = 1;
+contr = contrasts((cond+1)/2);
+baseSelect = allStimBase(cond,:,1) >= thresholdFreq ;
+% cond = 1;
+stimPost = 1;
+norm = 1;
+unitsLR = find(baseSelect);%find(OInegUnits);%
+x1 = allStimMagnNorm(1:(totalConds-2)/2, unitsLR, 1)'; % no photostim cond, pre photostim
+x2 = allStimMagnNorm(1:(totalConds-2)/2, unitsLR, 1)'; % photostim cond, pre photostim
+y1 = allStimMagnNorm(1:(totalConds-2)/2, unitsLR, stimPost)'; % no photostim cond, post photostim
+y2 = allStimMagnDiffNorm(1:(totalConds-2)/2, unitsLR, stimPost)'; % photostim cond, post photostim
+x1 = x1(:);
+x2 = x2(:);
+y1 = y1(:);
+y2 = y2(:);
+
+avg100 = nanmean(y2(x2 == 1));
+avg80 = nanmean(y2(x2>=0.8 &  x2 < 1));
+avg60 = nanmean(y2(x2>=0.6 &  x2 < 0.8));
+avg40 = nanmean(y2(x2>=0.4 &  x2 < 0.6));
 
 %% OR magnitude quantification from normalized traces
 % not informative
@@ -99,7 +153,7 @@ y2 = allStimBaseComb(cond+1, unitsLR ,stimPost)'; % photostim cond, post photost
 norm = 1;
 exclude0 = 1;
 excludeOutliers = 0;
-thOut = 0.23;
+thOut = 0.45;
 totalCoeffs = 4;
 dataLM = 'magn';% 'base', 'ampl', 'magn' 
 
@@ -117,7 +171,10 @@ if exclude0  % exclude trials with 0 in pre or post stim
     x1 = x1(ind12);
     y1 = y1(ind12);
     x2 = x2(ind12);
-    y2 = y2(ind12);    
+    y2 = y2(ind12); 
+    if exist('condsContrast', 'var')
+        condsContrast = condsContrast(ind12);
+    end
 end
 if norm % normalize data to the max value in the data set
     maxData = max([x1;x2]) 
@@ -135,6 +192,9 @@ if excludeOutliers  % exclude trials with 0 in pre or post stim
     y1 = y1(ind1Out);
     x2 = x2(ind2Out);
     y2 = y2(ind2Out);
+    if exist('condsContrast', 'var')
+        condsContrast = condsContrast(ind2Out);
+    end
     if norm % normalize data to the max value in the data set
         maxData = max([x1;x2])
         x1 = x1/maxData;

@@ -45,7 +45,7 @@ for cond = (1:2:totalConds-2)
     title(titleFig30bxxx{(cond+1)/2});
     background = get(gcf, 'color');
 %     yl=ylim;
-    yl = [-0.6 0.5];
+    yl = [-0.8 0.5];%[-0.6 0.5];
     ylim([yl(1), yl(2)*1.1]) 
     y= yl(2)*0.90;
     for stim = 1:totalStim
@@ -75,11 +75,22 @@ for cond = (1:2:totalConds-2)
     h1 = line([1.7 4.3], [max_hist1 max_hist1]);
     set(h1,'Color',[0.25 0.61 1] ,'LineWidth',4);% Set properties of lines
 
-%     
+    A = allStimMagnNormTracesBaseSubtr100Subtr;
+    notNan = all(~isnan(A),[1,3]);
+    val1 = [(1:totalStim)',squeeze(allStimMagnNormTracesBaseSubtr100Subtr((cond+1)/2,notNan,:))'];
+        
+    table_data1 = array2table(val1);
+    
+    allVars1 = 1:width(table_data1);
+    newNames1 =  ["Stim. no.", append("Unit ", string(allVars1(1:(end-1))))];
+    
+    table_data1 = renamevars(table_data1, allVars1, newNames1);
+
     if saveFigs == true
         savefig(strcat(savePath, saveFig30bxxx{(cond+1)/2}));
         title('');
         saveas(gcf, strcat(savePath, saveFig30bxxx{(cond+1)/2}(1:end-3), 'png'));
         saveas(gcf, strcat(savePath, saveFig30bxxx{(cond+1)/2}(1:end-4)), 'epsc');
+        writetable(table_data1, strcat(savePath, saveFig30bxxx{(cond+1)/2}(1:end-3), 'xlsx'),'Sheet',1)
     end
 end

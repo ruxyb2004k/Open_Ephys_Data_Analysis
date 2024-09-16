@@ -57,12 +57,39 @@ for cond = (1:2:totalConds)%(1:2:totalConds-2)
     %shadedErrorBar1((plotBeg:bin:plotEnd),meanNormTraceFreqAllsame(cond+1,:),STEMnormTraceFreqAllsame(cond+1,:), {'LineWidth', 3,'Color', C(cond+1,:), 'LineStyle', ':'}); hold on
     shadedErrorBar1((plotBeg:bin:plotEnd),meanNormTraceFreqAllSameOIpos(cond+1,:),STEMnormTraceFreqAllSameOIpos(cond+1,:), {'LineWidth', 3,'Color', cCreCellType, 'LineStyle', '-'}); hold on
     shadedErrorBar1((plotBeg:bin:plotEnd),meanNormTraceFreqAllSameOIneg(cond+1,:),STEMnormTraceFreqAllSameOIneg(cond+1,:), {'LineWidth', 3,'Color', cCreCellType, 'LineStyle', '--'}); hold on
+ 
+    %A = normTraceFreqAllsame;
+    %notNan = all(~isnan(A),[1,3]);
+    val1 = [(plotBeg:bin:plotEnd)',squeeze(normTraceFreqAllSameOIpos(cond,:, :))'];
+    val2 = [(plotBeg:bin:plotEnd)',squeeze(normTraceFreqAllSameOIpos(cond+1,:, :))'];
 
+    val3 = [(plotBeg:bin:plotEnd)',squeeze(normTraceFreqAllSameOIneg(cond,:, :))'];
+    val4 = [(plotBeg:bin:plotEnd)',squeeze(normTraceFreqAllSameOIneg(cond+1,:, :))'];
     
+    table_data1 = array2table(val1);
+    table_data2 = array2table(val2);
+    table_data3 = array2table(val3);
+    table_data4 = array2table(val4);
+    
+    allVars1 = 1:width(table_data1);
+    newNames1 =  ["Time (s)", append("Unit ", string(allVars1(1:(end-1))))];
+    
+    allVars3 = 1:width(table_data3);
+    newNames3 =  ["Time (s)", append("Unit ", string(allVars3(1:(end-1))))];
+    
+    table_data1 = renamevars(table_data1, allVars1, newNames1);
+    table_data2 = renamevars(table_data2, allVars1, newNames1);
+    table_data3 = renamevars(table_data3, allVars3, newNames3);
+    table_data4 = renamevars(table_data4, allVars3, newNames3);
+      
     if saveFigs == true
         savefig(strcat(savePath, saveFig31d{(cond+1)/2}));
         title('');
         saveas(gcf, strcat(savePath, saveFig31d{(cond+1)/2}(1:end-3), 'png'));
         saveas(gcf, strcat(savePath, saveFig31d{(cond+1)/2}(1:end-4)), 'epsc');
+        writetable(table_data1, strcat(savePath, saveFig31d{(cond+1)/2}(1:end-3), 'xlsx'),'Sheet',1)
+        writetable(table_data2, strcat(savePath, saveFig31d{(cond+1)/2}(1:end-3), 'xlsx'),'Sheet',2)
+        writetable(table_data3, strcat(savePath, saveFig31d{(cond+1)/2}(1:end-3), 'xlsx'),'Sheet',3)
+        writetable(table_data4, strcat(savePath, saveFig31d{(cond+1)/2}(1:end-3), 'xlsx'),'Sheet',4)
     end
 end

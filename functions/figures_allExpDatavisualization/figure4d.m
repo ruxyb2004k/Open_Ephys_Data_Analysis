@@ -27,8 +27,10 @@ for cond = totalConds-1% (1:2:totalConds)
     ax = gca;
     hold on
     yval = squeeze(normAllStimBase(cond:cond+1,:,stim))';
-    b4b = boxplot(yval, xval, 'Colors', C(cond:cond+1,:), 'Symbol', 'o','Widths',fw,'Notch', 'off');%'none', 'BarWidth', 1/fw); hold on
+    b4b = boxplot(yval, xval, 'Colors', [C(cond,:);cCreCellType], 'Symbol', 'o','Widths',fw,'Notch', 'off')%'BoxStyle','filled');%'none', 'BarWidth', 1/fw); hold on
+    %b4b = boxplot(yval, xval, 'Colors', [C(cond,:);cCreCellType], 'Symbol', 'o','Widths',fw,'Notch', 'off','BoxStyle','filled');%'none'); hold on
 
+    set(b4b, 'LineWidth',2);
     
     box off
     ylabel('Firing rate (norm.) ');

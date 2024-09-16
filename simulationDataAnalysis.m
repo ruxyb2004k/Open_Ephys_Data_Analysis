@@ -13,7 +13,7 @@ unitType = 1; % 1 = inh, 2 = exc
 exps = {'ActivatingInh100-200'}; %used for the final version - 11.2022
 %exps = {'ActivatingExc-200'}; %used for the final version - 11.2022
 %exps = {'ActivatingBoth'}; %used for the final version - 11.2022
-% exps = {'ActivatingInh100Exc50'}; % mean-driven
+%exps = {'ActivatingInh100Exc50'}; % mean-driven for the final version 
 keys2 = {'exc'}; % irrelevant, unitType is relevant
 bin = 20;
 time_stamps = ((bin:bin:4000)/1000)';
@@ -90,6 +90,7 @@ if contains(char(exps), 'ActivatingBoth') || (contains(char(exps), 'Inh') && con
     lineBase = 1.06; % experimental values
     lineMagn = -0.21; % experimental values
     rangeMagn = [-0.21 -0.6785]; % experimental values
+    ownExpMagn = [-0.32 -0.25]; % exp values for exc and inh neurons
     marker = '*-';
 
 elseif contains(char(exps), 'ActivatingExc')
@@ -425,7 +426,7 @@ allStimMagn = allStimAmpl-allStimPhoto;
 
 cond = 2;
 norm = 1;
-unitType = 1; % 1 = exc, 2 = inh
+unitType = 2; % 1 = exc, 2 = inh
 unitsLR = classUnitsAll==unitType;%find(baseSelect);%find(OInegUnits);%
 x1 = allStimMagn(1, unitsLR)'; % no photostim cond, pre photostim
 x2 = allStimMagn(1, unitsLR)'; % photostim cond, pre photostim

@@ -22,12 +22,12 @@ end
 figure
 ax = gca;
 line([0 totalConds-1]/(totalConds-1)*100, [1 1],'Color',[.2 .2 .2],'LineStyle','--'); hold on
-if ~strcmp(char(exps), 'ActivatingBoth') && ~(contains(char(exps), 'Inh') && contains(char(exps), 'Exc'))
-    line([0 totalConds-1]/(totalConds-1)*100, [lineBaseExc lineBaseExc],'Color',cCreCellType(1,:),'LineStyle','--','LineWidth',2);
-    line([0 totalConds-1]/(totalConds-1)*100, [lineBaseInh lineBaseInh],'Color',cCreCellType(2,:),'LineStyle','--','LineWidth',2);
-else
-    line([0 totalConds-1]/(totalConds-1)*100, [lineBase lineBase],'Color',cCreCellType(1,:),'LineStyle','--','LineWidth',2);
-end
+% if ~strcmp(char(exps), 'ActivatingBoth') && ~(contains(char(exps), 'Inh') && contains(char(exps), 'Exc'))
+%     line([0 totalConds-1]/(totalConds-1)*100, [lineBaseExc lineBaseExc],'Color',cCreCellType(1,:),'LineStyle','--','LineWidth',2);
+%     line([0 totalConds-1]/(totalConds-1)*100, [lineBaseInh lineBaseInh],'Color',cCreCellType(2,:),'LineStyle','--','LineWidth',2);
+% else
+%     line([0 totalConds-1]/(totalConds-1)*100, [lineBase lineBase],'Color',cCreCellType(1,:),'LineStyle','--','LineWidth',2);
+% end
 plot(xdata, meanNormAllStimPhoto(:,1), marker1, 'LineWidth',2,...
     'Color',cCreCellType(1,:), 'MarkerSize',ms);    hold on %,'MarkerFaceColor',cCreCellType(1,:)
 plot(xdata, meanNormAllStimPhoto(:,2), marker2, 'LineWidth',2,...
@@ -43,9 +43,26 @@ title(titleFig4bModx);
 background = get(gcf, 'color');
 box off
 
+A = normAllStimPhoto;
+val1 = A(:,classUnitsAll==1)';
+val2 = A(:,classUnitsAll==2)';
+
+table_data1 = array2table(val1);
+table_data2 = array2table(val2);
+
+allVars1 = 1:width(table_data1);
+
+newNames1 =  string(xdata);
+
+table_data1 = renamevars(table_data1, allVars1, newNames1); % exc
+table_data2 = renamevars(table_data2, allVars1, newNames1); % inh
+
+
 if saveFigs == true
     savefig(strcat(savePath, saveFig4bModx{1}));
     title('');
     saveas(gcf, strcat(savePath, saveFig4bModx{1}(1:end-3), 'png'));
     saveas(gcf, strcat(savePath, saveFig4bModx{1}(1:end-4)), 'epsc');
+    writetable(table_data1, strcat(savePath, saveFig4bModx{1}(1:end-3), 'xlsx'),'Sheet',1)
+    writetable(table_data2, strcat(savePath, saveFig4bModx{1}(1:end-3), 'xlsx'),'Sheet',2)
 end

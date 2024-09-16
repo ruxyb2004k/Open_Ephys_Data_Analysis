@@ -53,10 +53,27 @@ for cond = (1:2:totalConds)%(1:2:totalConds-2)
     set(gca,'children',flipud(get(gca,'children')))% The order of the "children" of the plot determines which one appears on top. Need to flip it here.
     shadedErrorBar1((plotBeg:bin:plotEnd),meanNormTraceFreqAllsame(cond,:),STEMnormTraceFreqAllsame(cond,:), {'LineWidth', 3,'Color', C(cond,:)}); hold on
     shadedErrorBar1((plotBeg:bin:plotEnd),meanNormTraceFreqAllsame(cond+1,:),STEMnormTraceFreqAllsame(cond+1,:), {'LineWidth', 3,'Color', C(cond+1,:)}); hold on
+    
+    A = normTraceFreqAllsame;
+    notNan = all(~isnan(A),[1,3]);
+    val1 = [(plotBeg:bin:plotEnd)',squeeze(normTraceFreqAllsame(cond,notNan, :))'];
+    val2 = [(plotBeg:bin:plotEnd)',squeeze(normTraceFreqAllsame(cond+1,notNan, :))'];
+    
+    table_data1 = array2table(val1);
+    table_data2 = array2table(val2);
+    
+    allVars = 1:width(table_data1);
+    newNames =  ["Time (s)", append("Unit ", string(allVars(1:(end-1))))];
+    
+    table_data1 = renamevars(table_data1, allVars, newNames);
+    table_data2 = renamevars(table_data2, allVars, newNames);
+       
     if saveFigs == true
         savefig(strcat(savePath, saveFig2e{(cond+1)/2}));
         title('');
         saveas(gcf, strcat(savePath, saveFig2e{(cond+1)/2}(1:end-3), 'png'));
         saveas(gcf, strcat(savePath, saveFig2e{(cond+1)/2}(1:end-4)), 'epsc');
+        writetable(table_data1, strcat(savePath, saveFig2e{(cond+1)/2}(1:end-3), 'xlsx'),'Sheet',1)
+        writetable(table_data2, strcat(savePath, saveFig2e{(cond+1)/2}(1:end-3), 'xlsx'),'Sheet',2)
     end
 end

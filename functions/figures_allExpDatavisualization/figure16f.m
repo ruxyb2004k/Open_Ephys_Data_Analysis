@@ -3,18 +3,32 @@
 
 % titleFig16f = {'Base1 vs base4 100% no photostim', 'Base1 vs base4 100% with photostim',...
 %     'Base1 vs base4 0% no photostim','Base1 vs base4 0% with photostim'};
+if totalStim == 6
+    contr = 100;
+end
+
 if strcmp(dataLM, 'base') 
     saveFig16f = {'LMbasePrebasePost0.fig'}; %modify here if needed
     cond = totalConds-1;
 elseif strcmp(dataLM, 'magn')
-    saveFig16f = {'LMmagnPremagnPost.fig'}; %modify here if needed  
+    saveFig16f = {['LMmagnPremagnPost',num2str(contr),'.fig']}; %modify here if needed  
     cond = 1;
 end    
 
 figure;
 ax = gca;
-scatter(x1, y1, 'MarkerEdgeColor', C(cond,:), 'LineWidth', 2); hold on
-scatter(x2, y2, 'MarkerEdgeColor', C(cond +1,:), 'LineWidth', 2);
+if totalStim == 6
+    scatter(x1, y1, 'MarkerEdgeColor', C(cond,:), 'LineWidth', 2); hold on
+    scatter(x2, y2, 'MarkerEdgeColor', C(cond +1,:), 'LineWidth', 2);
+elseif totalStim == 1
+    uniqueC = sort(unique(condsContrast));
+    for i = 1:numel(uniqueC)
+        ind = condsContrast == uniqueC(i);
+        scatter(x1(ind), y1(ind),'MarkerEdgeColor', C(cond,:), 'LineWidth', 2, 'MarkerEdgeAlpha', 1-(i-1)/4); hold on
+        scatter(x2(ind), y2(ind),'MarkerEdgeColor', C(cond +1,:), 'LineWidth', 2, 'MarkerEdgeAlpha', 1-(i-1)/4); hold on
+    end    
+end    
+    
 
 
 lims = max(xlim, ylim);
@@ -40,7 +54,8 @@ text(lim*0.8, lim*0.1, [num2str(round(coeffsLM1(1),2)),'\cdotr_p_r_e + ',num2str
 text(lim*0.8, lim*0.25, [num2str(round(coeffsLM2(1),2)),'\cdotr_p_r_e + ',num2str(round(coeffsLM2(2),2)) ] ,'FontSize',fs, 'HorizontalAlignment','center', 'Color', C(cond+1,:));
 
 legend off
-
+xlim([min([x1;x2;y1;y2]),1]);
+ylim([min([x1;x2;y1;y2]),1]);
 h1 = line([0 lim],[0 lim]); % diagonal line
 set(h1, 'Color','r','LineWidth',1, 'LineStyle', '--')% Set properties of lines
 if totalStim == 6
@@ -54,15 +69,25 @@ if totalStim == 6
     xlabel('Firing rate pre (norm.)','FontSize',24); % labels for paper
     ylabel('Firing rate post (norm.)','FontSize',24); % labels for paper
 else
-    xlabel('Norm. comb. base pre','FontSize',24); % modify here if needed
-    ylabel('Norm. comb. base post','FontSize',24); % modify here if needed
+    xlabel('Firing rate pre (norm.)','FontSize',24); % 
+    ylabel('Firing rate post (norm.)','FontSize',24); % 
 end    
 % xlim([0 1])
 % ylim([0 1])
 set(ax, 'TickDir', 'out');
 set(ax,'FontSize',fs)
+
+table_data1 = array2table([x1,y1,x2,y2]);
+
+table_data1 = renamevars(table_data1, ["Var1", "Var2", "Var3", "Var4"], ["V, pre", "V, post", "Vph, pre", "Vph, post"]);
+
 if saveFigs == true
     savefig(strcat(savePath, saveFig16f{1}));
     saveas(gcf, strcat(savePath, saveFig16f{1}(1:end-3), 'png'));
     saveas(gcf, strcat(savePath, saveFig16f{1}(1:end-4)), 'epsc');
+    %print(strcat(savePath, saveFig16f{1}(1:end-4)), '-depsc');
+    %export_fig fig_contrast.eps
+    writetable(table_data1, strcat(savePath, saveFig16f{1}(1:end-3), 'xlsx'),'Sheet',1)
+
+    
 end

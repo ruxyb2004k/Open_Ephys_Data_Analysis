@@ -1,6 +1,10 @@
 %%% created by RB on 04.02.2021
 %%% depicts a linear model of the photostim effect on spont activity
 
+% if totalStim == 6
+%     contr = 100;
+% end
+
 if strcmp(dataLM, 'base') 
     saveFig16fxMod = {'LMbasePrebasePost0Coeffs.fig'}; %modify here if needed
 elseif strcmp(dataLM, 'magn') 

@@ -75,10 +75,27 @@ for cond = (1:2:totalConds-2)%(1:2:totalConds)
 %     set(ax,'YMinorTick','Off')  
 %     ax.YMinorTick = 'off'
     
+    %squeeze(normTraceFreqAllAdj(cond,:,:))
+    A = normTraceFreqAllAdj;
+    notNan = all(~isnan(A),[1,3]);
+    val1 = [(plotBeg:bin:plotEnd)',squeeze(normTraceFreqAllAdj(cond,notNan,:))'];
+    val2 = [(plotBeg:bin:plotEnd)',squeeze(normTraceFreqAllAdj(cond+1,notNan,:))'];
+    
+    table_data1 = array2table(val1);
+    table_data2 = array2table(val2);
+    
+    allVars1 = 1:width(table_data1);
+    newNames1 =  ["Time (s)", append("Unit ", string(allVars1(1:(end-1))))];
+    
+    table_data1 = renamevars(table_data1, allVars1, newNames1);
+    table_data2 = renamevars(table_data2, allVars1, newNames1);
+
     if saveFigs == true
         savefig(strcat(savePath, saveFig2c{(cond+1)/2}));
         title('');
         saveas(gcf, strcat(savePath, saveFig2c{(cond+1)/2}(1:end-3), 'png'));
         saveas(gcf, strcat(savePath, saveFig2c{(cond+1)/2}(1:end-4)), 'epsc');
+        writetable(table_data1, strcat(savePath, saveFig2c{(cond+1)/2}(1:end-3), 'xlsx'),'Sheet',1)
+        writetable(table_data2, strcat(savePath, saveFig2c{(cond+1)/2}(1:end-3), 'xlsx'),'Sheet',2)
     end
 end

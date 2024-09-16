@@ -4,7 +4,7 @@
 if strcmp(dataLM, 'base') 
     saveFig16fx = {'LMbasePrebasePost0Coeffs.fig'}; %modify here if needed
 elseif strcmp(dataLM, 'magn') 
-    saveFig16fx = {'LMmagnPreMagnPostCoeffs.fig'}; %modify here if needed   
+    saveFig16fx = {['LMmagnPreMagnPostCoeffs',num2str(contr),'.fig']}; %modify here if needed   
 end
 
 fsStars = 20;
@@ -33,8 +33,15 @@ set(ax, 'TickDir', 'out');
 box off
 set(ax,'FontSize',fs)
 % text(0.8,max(ylim),'r_p_o_s_t = \beta_0 + \beta_1\cdotr_p_r_e + \beta_2\cdots + \beta_3\cdotr_p_r_e\cdots','FontSize',18)
+
+table_data1 = table(coeffsLM(:,1), coeffsLM(:,2), coeffsLM(:,4));
+
+table_data1 = renamevars(table_data1 , ["Var1", "Var2", "Var3"],...
+    ["Beta","s.e.m.", "P"]);
+
 if saveFigs == true
     savefig(strcat(savePath, saveFig16fx{1}));
     saveas(gcf, strcat(savePath, saveFig16fx{1}(1:end-3), 'png'));
     saveas(gcf, strcat(savePath, saveFig16fx{1}(1:end-4)), 'epsc');
+    writetable(table_data1, strcat(savePath, saveFig16fx{1}(1:end-3), 'xlsx'),'Sheet',1, 'Range','A:D')
 end

@@ -5,7 +5,7 @@
 % exp 2020-08-10_14-18-15
 
 saveFigs = false;
-savePath = [strjoin({path{1:end}, 'figs','2021-10',  'PvCre', 'long','evoked', 'inh'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
+savePath = [strjoin({path{1:end}, 'figs','2024-01',  'PvCre', 'long','evoked', 'inh'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
 
 titleFig50b = {'Histogram firing rates'};
 saveFig50b = {'HistFR.fig'};
@@ -20,7 +20,7 @@ f = figure('Renderer', 'painters'); % all waveforms
 subplot(2,1,1)
 code = selUnits(1)
 codes(code)
-cond = 3;
+cond = 1;
 histogram(spikeInTrials{cond+1,code}, edges, 'Normalization', 'countdensity','FaceColor', 'b','FaceAlpha', 1); hold on%
 histogram(spikeInTrials{cond,code}, edges, 'Normalization', 'countdensity','FaceColor', 'k', 'FaceAlpha', 1); hold on
 
@@ -68,19 +68,37 @@ xticklabels({'0','5','10', '15', '20'})
 yticks([0:200:600]);
 yticklabels({'0','10', '20', '30'})
 
+val1 = spikeInTrials{cond,selUnits(1)} - plotBeg;
+val2 = spikeInTrials{cond+1,selUnits(1)} - plotBeg;
+val3 = spikeInTrials{cond,selUnits(2)} - plotBeg;
+val4 = spikeInTrials{cond+1,selUnits(2)} - plotBeg;
+
+table_data1 = array2table(val1);
+table_data2 = array2table(val2);
+table_data3 = array2table(val3);
+table_data4 = array2table(val4);
+
+table_data1 = renamevars(table_data1, ["val1"], ["V"]);
+table_data2 = renamevars(table_data2, ["val2"], ["Vph"]);
+table_data3 = renamevars(table_data3, ["val3"], ["V"]);
+table_data4 = renamevars(table_data4, ["val4"], ["Vph"]);
 
 if saveFigs == true
     savefig(strcat(savePath, saveFig50b{1}));
     title('');
     saveas(gcf, strcat(savePath, saveFig50b{1}(1:end-3), 'png'));
     saveas(gcf, strcat(savePath, saveFig50b{1}(1:end-4)), 'epsc');
+    writetable(table_data1, strcat(savePath, saveFig50b{1}(1:end-3), 'xlsx'),'Sheet',1, 'Range','A:B')
+    writetable(table_data2, strcat(savePath, saveFig50b{1}(1:end-3), 'xlsx'),'Sheet',1, 'Range','C:D')
+    writetable(table_data3, strcat(savePath, saveFig50b{1}(1:end-3), 'xlsx'),'Sheet',1, 'Range','E:F')
+    writetable(table_data4, strcat(savePath, saveFig50b{1}(1:end-3), 'xlsx'),'Sheet',1, 'Range','G:H')
 end
 
 %%
 % exp 2020-10-14_13-27-56
 
-saveFigs = true;
-savePath = [strjoin({path{1:end}, 'figs','2022-02',  'NexCre', 'long','evoked', 'exc'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
+saveFigs = false;
+savePath = [strjoin({path{1:end}, 'figs','2024-01',  'NexCre', 'long','evoked', 'exc'}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
 
 titleFig50b = {'Histogram firing rates'};
 saveFig50b = {'HistFR_2019-07-09_13-51-07.fig'};
@@ -147,10 +165,29 @@ xticklabels({'0','5','10', '15', '20'})
 yticks([0:200:600]);
 yticklabels({'0','10', '20', '30'})
 
+val1 = spikeInTrials{cond,selUnits(1)} - plotBeg;
+val2 = spikeInTrials{cond+1,selUnits(1)} - plotBeg;
+val3 = spikeInTrials{cond,selUnits(2)} - plotBeg;
+val4 = spikeInTrials{cond+1,selUnits(2)} - plotBeg;
+
+table_data1 = array2table(val1);
+table_data2 = array2table(val2);
+table_data3 = array2table(val3);
+table_data4 = array2table(val4);
+
+table_data1 = renamevars(table_data1, ["val1"], ["S"]);
+table_data2 = renamevars(table_data2, ["val2"], ["Sph"]);
+table_data3 = renamevars(table_data3, ["val3"], ["S"]);
+table_data4 = renamevars(table_data4, ["val4"], ["Sph"]);
+
 
 if saveFigs == true
     savefig(strcat(savePath, saveFig50b{1}));
     title('');
     saveas(gcf, strcat(savePath, saveFig50b{1}(1:end-3), 'png'));
     saveas(gcf, strcat(savePath, saveFig50b{1}(1:end-4)), 'epsc');
+    writetable(table_data1, strcat(savePath, saveFig50b{1}(1:end-3), 'xlsx'),'Sheet',1, 'Range','A:B')
+    writetable(table_data2, strcat(savePath, saveFig50b{1}(1:end-3), 'xlsx'),'Sheet',1, 'Range','C:D')
+    writetable(table_data3, strcat(savePath, saveFig50b{1}(1:end-3), 'xlsx'),'Sheet',1, 'Range','E:F')
+    writetable(table_data4, strcat(savePath, saveFig50b{1}(1:end-3), 'xlsx'),'Sheet',1, 'Range','G:H')
 end

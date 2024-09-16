@@ -132,7 +132,7 @@ end
 %%
 exps = 'ActivatingBoth';
 path = strsplit(pwd,filesep);
-savePath = [strjoin({path{1:end}, 'figs','2022-06',  char(exps)}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
+savePath = [strjoin({path{1:end}, 'figs','2023-06',  char(exps)}, filesep), filesep];%,  'NexCre', 'long', 'evoked', 'exc'
 
 event_times = [1000, 2000, 3000, 3500]/1000; %%%%
 saveFigs = false;
@@ -194,10 +194,32 @@ for cond = condsPlot %(1:totalConds)
 
 end    
 
+val1 = data_combined_all_units(1, 1).g_ex(50:200,:)';
+val2 = data_combined_all_units(1, 1).g_in(50:200,:)';
+val3 = data_combined_all_units(3, 1).g_ex(50:200,:)';
+val4 = data_combined_all_units(3, 1).g_in(50:200,:)';
+
+table_data1 = array2table(val1);
+table_data2 = array2table(val2);
+table_data3 = array2table(val3);
+table_data4 = array2table(val4);
+
+allVars1 = 1:width(table_data1);
+newNames1 =  string(0:0.02:3);
+
+table_data1 = renamevars(table_data1, allVars1, newNames1); % exc 0%
+table_data2 = renamevars(table_data2, allVars1, newNames1); % inh 0%
+table_data3 = renamevars(table_data3, allVars1, newNames1); % exc 50%
+table_data4 = renamevars(table_data4, allVars1, newNames1); % inh 50%
+
 if saveFigs == true
     savefig(strcat(savePath, saveFig70Mod{1}));
     saveas(gcf, strcat(savePath, saveFig70Mod{1}(1:end-3), 'png'));
     saveas(gcf, strcat(savePath, saveFig70Mod{1}(1:end-4)), 'epsc');
+    writetable(table_data1, strcat(savePath, saveFig70Mod{1}(1:end-3), 'xlsx'),'Sheet',1)
+    writetable(table_data2, strcat(savePath, saveFig70Mod{1}(1:end-3), 'xlsx'),'Sheet',2)
+    writetable(table_data3, strcat(savePath, saveFig70Mod{1}(1:end-3), 'xlsx'),'Sheet',3)
+    writetable(table_data4, strcat(savePath, saveFig70Mod{1}(1:end-3), 'xlsx'),'Sheet',4)
 end
 
 %% E/I conductance

@@ -65,9 +65,25 @@ for cond = condsPlot %(1:totalConds)
     i = i+1;
 end
     
+A = smoothTraceFreqAll;
+val1 = squeeze(A(1,:,50:200));
+val2 = squeeze(A(3,:,50:200));
+
+table_data1 = array2table(val1);
+table_data2 = array2table(val2);
+
+allVars1 = 1:width(table_data1);
+newNames1 =  string(0:0.02:3);
+
+table_data1 = renamevars(table_data1, allVars1, newNames1); % exc
+table_data2 = renamevars(table_data2, allVars1, newNames1); % inh
+
+
 if saveFigs == true
     savefig(strcat(savePath, saveFig1Mod{1}));
 %     title('');
     saveas(gcf, strcat(savePath, saveFig1Mod{1}(1:end-3), 'png'));
     saveas(gcf, strcat(savePath, saveFig1Mod{1}(1:end-4)), 'epsc');
+    writetable(table_data1, strcat(savePath, saveFig1Mod{1}(1:end-3), 'xlsx'),'Sheet',1)
+    writetable(table_data2, strcat(savePath, saveFig1Mod{1}(1:end-3), 'xlsx'),'Sheet',2)
 end

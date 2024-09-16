@@ -28,13 +28,15 @@ ax = gca;
 hold on
 line([0 totalConds-1]/(totalConds-1)*100, [0 0], 'Color', [.5 .5 .5 ])
 if ~strcmp(char(exps), 'ActivatingBoth') && ~(contains(char(exps), 'Inh') && contains(char(exps), 'Exc'))
-    line([0 totalConds-1]/(totalConds-1)*100, [lineMagnExc lineMagnExc],'Color',cCreCellType(1,:),'LineStyle','--','LineWidth',2);
-    line([0 totalConds-1]/(totalConds-1)*100, [lineMagnInh lineMagnInh],'Color',cCreCellType(2,:),'LineStyle','--','LineWidth',2);
+%     line([0 totalConds-1]/(totalConds-1)*100, [lineMagnExc lineMagnExc],'Color',cCreCellType(1,:),'LineStyle','--','LineWidth',2);
+%     line([0 totalConds-1]/(totalConds-1)*100, [lineMagnInh lineMagnInh],'Color',cCreCellType(2,:),'LineStyle','--','LineWidth',2);
 else
 %     line([0 totalConds-1]/(totalConds-1)*100, [lineMagn lineMagn],'Color',cCreCellType(1,:),'LineStyle','--','LineWidth',2);
     rectangle('Position',[0 min(rangeMagn) 100 abs(diff(rangeMagn))], 'FaceColor',[cCreCellType(1,:), 0.3], 'LineStyle', 'none');
     line([0 totalConds-1]/(totalConds-1)*100, [rangeMagn(1) rangeMagn(1)],'Color',cCreCellType(1,:),'LineStyle','--','LineWidth',2);
     line([0 totalConds-1]/(totalConds-1)*100, [rangeMagn(2) rangeMagn(2)],'Color',cCreCellType(1,:),'LineStyle','--','LineWidth',2);
+    line([0 totalConds-1]/(totalConds-1)*100, [ownExpMagn(1) ownExpMagn(1)],'Color',[213 94 0]/255,'LineStyle','--','LineWidth',2);
+    line([0 totalConds-1]/(totalConds-1)*100, [ownExpMagn(2) ownExpMagn(2)],'Color',[0,114,178]/255,'LineStyle','--','LineWidth',2);
 end
 
 plot(xdata, meanAllStimMagnNormTracesBaseSubtr100Subtr(:,1), marker1,'LineWidth',2,...
@@ -51,9 +53,26 @@ set(ax, 'TickDir', 'out');
 title(titleFig30bxxxModx{1});
 background = get(gcf, 'color');
 
+A = allStimMagnNormTracesBaseSubtr100Subtr;
+val1 = A(:,classUnitsAll==1)';
+val2 = A(:,classUnitsAll==2)';
+
+table_data1 = array2table(val1);
+table_data2 = array2table(val2);
+
+allVars1 = 1:width(table_data1);
+
+newNames1 =  string(xdata);
+
+table_data1 = renamevars(table_data1, allVars1, newNames1); % exc
+table_data2 = renamevars(table_data2, allVars1, newNames1); % inh
+
+
 if saveFigs == true
     savefig(strcat(savePath, saveFig30bxxxModx{1}));
     title('');
     saveas(gcf, strcat(savePath, saveFig30bxxxModx{1}(1:end-3), 'png'));
     saveas(gcf, strcat(savePath, saveFig30bxxxModx{1}(1:end-4)), 'epsc');
+    writetable(table_data1, strcat(savePath, saveFig30bxxxModx{1}(1:end-3), 'xlsx'),'Sheet',1)
+    writetable(table_data2, strcat(savePath, saveFig30bxxxModx{1}(1:end-3), 'xlsx'),'Sheet',2)
 end

@@ -392,6 +392,10 @@ if totalStim ==6
     normAllStimAmpl100 = allStimAmplNormTrace.*(isfinite(allStimAmplNormTrace)); % normalize to first stim in the same non-photostim cond
 elseif totalStim == 1
     normAllStimAmpl100 = allStimAmplNormTrace100;
+    normAllStimAmpl100Diff = nan(totalConds/2, totalUnits);
+    for cond = 1:2:totalConds
+        normAllStimAmpl100Diff((cond+1)/2,:) = normAllStimAmpl100(cond+1,:) - normAllStimAmpl100(cond,:);
+    end    
 end    
 % normAllStimAmpl100 = nan(totalConds, totalUnits, totalStim)
 % for cond = 1:totalConds-2
@@ -425,6 +429,12 @@ for cond = (1:2:totalConds)
     end
 end
 
+if totalStim == 1
+    meanNormAllStimAmpl100Diff = nanmean(normAllStimAmpl100Diff,2);
+    for cond = (1:2:totalConds)
+        STEMnormAllStimAmpl100Diff((cond+1)/2, :) = nanstd(normAllStimAmpl100Diff((cond+1)/2,:))/sqrt(sum(~isnan(normAllStimAmpl100Diff((cond+1)/2,:))));  
+    end
+end    
 
 %% Analysis Fig. 7, 8 - Opto-index and ratio of baselines in photostim vs non-photostim. conditions
 
@@ -508,6 +518,37 @@ for cond = 1:2:totalConds
     end
 end
 
+% calculate p val for comparison within the same condition
+meanOIndexAllStimBaseSame = squeeze(nanmean(OIndexAllStimBaseSame,2));
+meanOIndexAllStimBaseSameExc = squeeze(nanmean(OIndexAllStimBaseSame(:,classUnitsAll == 1,:),2));
+meanOIndexAllStimBaseSameInh = squeeze(nanmean(OIndexAllStimBaseSame(:,classUnitsAll == 2,:),2));
+
+sigmaOIndexAllStimBaseSame = nan(totalConds,numel(baseStim));
+sigmaOIndexAllStimBaseSameExc = nan(totalConds,numel(baseStim));
+sigmaOIndexAllStimBaseSameInh = nan(totalConds,numel(baseStim));
+
+distOIndexAllStimBaseSame = nan(totalConds,numel(baseStim), numel(OIvalues));
+distOIndexAllStimBaseSameExc = nan(totalConds,numel(baseStim), numel(OIvalues));
+distOIndexAllStimBaseSameInh = nan(totalConds,numel(baseStim), numel(OIvalues));
+
+for cond = 1:totalConds
+    for stim = 2:numel(baseStim)
+        if mixed
+            sigmaOIndexAllStimBaseSame(cond, stim) = nanstd(OIndexAllStimBaseSame(cond,:, stim));
+            sigmaOIndexAllStimBaseSameExc(cond, stim) = nanstd(OIndexAllStimBaseSame(cond,classUnitsAll == 1,stim));
+            sigmaOIndexAllStimBaseSameInh(cond, stim) = nanstd(OIndexAllStimBaseSame(cond,classUnitsAll == 2, stim));
+            
+            pdOIndexAllStimBaseSame(cond, stim) = makedist('Normal','mu', meanOIndexAllStimBaseSame(cond, stim),'sigma',sigmaOIndexAllStimBaseSame(cond, stim));
+            pdOIndexAllStimBaseSameExc(cond, stim) = makedist('Normal','mu',meanOIndexAllStimBaseSameExc(cond, stim),'sigma',sigmaOIndexAllStimBaseSameExc(cond, stim));
+            pdOIndexAllStimBaseSameInh(cond, stim) = makedist('Normal','mu',meanOIndexAllStimBaseSameInh(cond, stim),'sigma',sigmaOIndexAllStimBaseSameInh(cond, stim));
+            
+            distOIndexAllStimBaseSame(cond, stim,:) = pdf(pdOIndexAllStimBaseSame(cond, stim),OIvalues);
+            distOIndexAllStimBaseSameExc(cond, stim,:) = pdf(pdOIndexAllStimBaseSameExc(cond, stim),OIvalues);
+            distOIndexAllStimBaseSameInh(cond, stim,:) = pdf(pdOIndexAllStimBaseSameInh(cond, stim),OIvalues);
+            [hOIndexAllStimBaseSameExcInh(cond, stim), pOIndexAllStimBaseSameExcInh(cond, stim)] = kstest2(squeeze(OIndexAllStimBaseSame(cond,classUnitsAll == 1, stim)),squeeze(OIndexAllStimBaseSame(cond,classUnitsAll == 2, stim)));
+        end
+    end
+end
 
 STEMOIndexAllStimBase = nan(totalConds/2, numel(baseStim));
 STEMOIndexAllStimBaseExc = nan(totalConds/2, numel(baseStim));
@@ -555,11 +596,19 @@ for cond = 1:2:totalConds % fig 7dx
     end
 end
 
-OIposUnits = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 4)>0; % run the next section before uncommenting this line
-OInegUnits = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 4)<0; % run the next section before uncommenting this line
+if sessionInfoAll.trialDuration == 18
+    OIposUnits = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 4)>0; % run the next section before uncommenting this line
+    OInegUnits = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 4)<0; % run the next section before uncommenting this line
 
-OIposUnitsSame = iUnitsFilt & baseSelect & OIndexAllStimBaseSame(totalConds,:, 4)>0; % run the next section before uncommenting this line
-OInegUnitsSame = iUnitsFilt & baseSelect & OIndexAllStimBaseSame(totalConds,:, 4)<0; % run the next section before uncommenting this line
+    OIposUnitsSame = iUnitsFilt & baseSelect & OIndexAllStimBaseSame(totalConds,:, 4)>0; % run the next section before uncommenting this line
+    OInegUnitsSame = iUnitsFilt & baseSelect & OIndexAllStimBaseSame(totalConds,:, 4)<0; % run the next section before uncommenting this line
+elseif sessionInfoAll.trialDuration == 6 || sessionInfoAll.trialDuration == 9 
+    OIposUnits = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 3)>0; % run the next section before uncommenting this line
+    OInegUnits = iUnitsFilt & OIndexAllStimBase(totalConds/2,:, 3)<0; % run the next section before uncommenting this line
+
+    OIposUnitsSame = iUnitsFilt & baseSelect & OIndexAllStimBaseSame(totalConds,:, 3)>0; % run the next section before uncommenting this line
+    OInegUnitsSame = iUnitsFilt & baseSelect & OIndexAllStimBaseSame(totalConds,:, 3)<0; % run the next section before uncommenting this line
+end
 
 if longBase 
     path1 =pwd;
@@ -1123,6 +1172,9 @@ end
 %% Analysis for Fig. 22: traces of visual evoked - sponateneous activity
 
 allStimMagn = allStimAmpl-allStimBase;
+if totalStim == 1
+    allStimMagn = allStimMagn(:,:,end);
+end
 
 meanAllStimMagn = squeeze(nanmean(allStimMagn(:,baseSelect,:),2)); % added baseSelect on 28.02.2023
 
@@ -1140,7 +1192,99 @@ for cond = (1:2:totalConds)
     end   
 end
 
+% calculation for LineaRegressionAnalysis
+if totalStim == 1
+    allStimMagnNorm = nan(totalConds/2, totalUnits);
+    for unit = find(baseSelect)
+        if (max(allStimMagn(:,unit)) ~= 0)
+            allStimMagnNorm(:,unit) = allStimMagn(1:2:totalConds,unit) / max(allStimMagn(1:2:totalConds,unit));
+        end
+    end
+    % continue here with a proper calculation of the above
+%     figure
+    allStimMagnNorm = nan(totalConds/2, totalUnits);
+    for cond = (1:2:totalConds-2)
+        for unit = find(baseSelect)
+            if (max(allStimMagn(cond,unit)) ~= 0)% && unit ~= 120) % only for PvCre, exc, 9s
+                allStimMagnNorm((cond+1)/2,unit) = (allStimMagn(cond+1,unit) -allStimMagn(cond,unit))./ allStimMagn(cond,unit);
+            end
+        end  
+%         subplot(1,5,(cond+1)/2)
+        %boxplot(allStimMagnNorm((cond+1)/2,:))
+        %ylim([-2 2]);
+%         histogram(allStimMagnNorm((cond+1)/2,:))
+    end
+    nanmedian(allStimMagnNorm,2)
+    %%%%%%%%%%%%%%%%%%%%%%%%%%% 
+    % similar amplitude calculation        
+%     figure
+    allStimAmplNorm = nan(totalConds/2, totalUnits);
+    for cond = (1:2:totalConds)
+        for unit = find(baseSelect)
+            if (max(allStimAmpl(cond,unit)) ~= 0 && unit ~= 120) % only for PvCre, exc, 9s
+                allStimAmplNorm((cond+1)/2,unit) = allStimAmpl(cond+1,unit) ./ allStimAmpl(cond,unit);
+            end
+        end  
+%         subplot(1,5,(cond+1)/2)
+%         boxplot(allStimAmplNorm((cond+1)/2,:))
+%         ylim([-0.2 3]);
+        %histogram(allStimAmplNorm((cond+1)/2,:))
+    end
+    nanmean(allStimAmplNorm,2)
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    allStimMagnDiff = nan(totalConds/2, totalUnits);
+%     figure
+    for cond = (1:2:totalConds)
+        allStimMagnDiff((cond+1)/2,:) = allStimMagn(cond+1,:) - allStimMagn(cond,:);
+%         subplot(1,5,(cond+1)/2)
+%         boxplot(allStimMagnDiff((cond+1)/2,:))
+        %scatter(1, nanmean(allStimMagnDiff((cond+1)/2,:)))
+%         ylim([-4 3])
+        %histogram(allStimMagnDiff((cond+1)/2,:))
+        
+    end
+    
+    allStimMagnDiffNorm = nan(totalConds/2, totalUnits);
+%     for unit = find(baseSelect)
+%         if (max(allStimMagnDiff(:,unit)) ~= 0)
+%             allStimMagnDiffNorm(:,unit) = allStimMagnDiff(:,unit) / max(allStimMagnDiff(:,unit));
+%         end
+%     end
+    
+    % OR
+    for unit = find(baseSelect)
+        if (allStimMagn(1,unit) ~= 0)
+            allStimMagnDiffNorm(:,unit) = allStimMagnDiff(:,unit) / allStimMagn(1,unit);
+        end
+    end
+    
+    
+    %%% trying with the amplitude
+    allStimAmplDiff = nan(totalConds/2, totalUnits);
+    for cond = (1:2:totalConds)
+        allStimAmplDiff((cond+1)/2,:) = allStimAmpl(cond,:) - allStimAmpl(cond+1,:);
+    end
+    
 
+%     allStimMagnDiffNorm = nan(totalConds/2, totalUnits);
+%     for unit = find(baseSelect)
+%         if (allStimMagnDiff(1,unit) ~= 0)
+%             allStimMagnDiffNorm(:,unit) = allStimMagnDiff(:,unit) / allStimMagnDiff(1,unit);
+%         end
+%     end
+%       
+%     meanAllStimMagnDiffNorm = nanmean(allStimMagnDiffNorm,2);
+%     STEMallStimMagnDiffNorm = nan(totalConds/2);
+%     for cond = 1:totalConds/2
+%         STEMallStimMagnDiffNorm(cond) = nanstd(allStimMagnDiffNorm(cond,:))/sqrt(sum(~isnan(allStimMagnDiffNorm(cond, :))));
+%     end
+
+    
+end
+
+
+
+% the next calculation seems very weird
 % calculate magnitude as V-Vph
 
 % baseSelect = allStimBase(totalConds-1,:,1) >= thresholdFreq ; 
@@ -1825,6 +1969,12 @@ if sum(classUnitsAll(iUnitsFilt) == 1) && strcmp(expSetFilt(1).animalStrain, 'Ne
 elseif sum(classUnitsAll(iUnitsFilt) == 2) && strcmp(expSetFilt(1).animalStrain, 'NexCre')
     cCreCellType = [230 153 153]/255;% NexCre inh
     cCreCellType = [153,199,225]/255; % new
+elseif sum(classUnitsAll(iUnitsFilt) == 1) && strcmp(expSetFilt(1).animalStrain, 'PvCre') && strcmp(expSetFilt(1).animalVirus, 'AAV9-flx-mOp2A+AAV9-CaMKII-mOp2A')
+    cCreCellType = [0 176 80]/255;% exc
+    cCreCellType = [213 94 0]/255; % new
+elseif sum(classUnitsAll(iUnitsFilt) == 2) && strcmp(expSetFilt(1).animalStrain, 'PvCre') && strcmp(expSetFilt(1).animalVirus, 'AAV9-flx-mOp2A+AAV9-CaMKII-mOp2A')
+    cCreCellType = [192 0 0]/255;% inh
+    cCreCellType = [0,114,178]/255; % new
 elseif sum(classUnitsAll(iUnitsFilt) == 1) && strcmp(expSetFilt(1).animalStrain, 'PvCre')
     cCreCellType = [153 224 185]/255;% PvCre exc
     cCreCellType = [239,191,170]/255; % new

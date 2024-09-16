@@ -3,8 +3,8 @@
 %%% modified 25.02.2019 by Ruxandra %%%
 % SECTION 1
 
-% experimentName = '2021-01-13_11-14-23'
-% sessionName = 'V1_20210113_1'
+% experimentName = '2019-07-09_13-51-07'
+% sessionName = 'V1_20190709_1'
 
 bin = 0.2;
 
@@ -344,7 +344,7 @@ save(filenameClusterTimeSeries, 'clusterTimeSeries')
 
 
 %%%%%%%%% change parameters here %%%%%%%%%
-% selectedCodesIndMuaUser = (1:numel(muaCodes)/2); % it will not be considered if it's empty or commented out
+%selectedCodesIndMuaUser = (1:numel(muaCodes)/2); % it will not be considered if it's empty or commented out
 unitIDs = [];
 [~,~,ib] = intersect(unitIDs ,spikeClusterData.muaCodes); % insert in the array the mua codes from kilosort
 selectedCodesIndMuaUser = ib';
@@ -530,6 +530,8 @@ statsMuaF
 
 %% SECTION 6
 % Calculations on selected Muas
+% respMatMua(setdiff(1:numel(respMatMua),ib)) = 2; % run this line if
+% the selected MUAs were already known and introduced in unitIDs
 disp('Calculations on selected Muas');
 selectedCodesIndMua = find(respMatMua ==1);
 selectedCodesMua = muaCodes(selectedCodesIndMua); % selected codes 
